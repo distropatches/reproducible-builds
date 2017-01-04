@@ -1,0 +1,17 @@
+From: Bernhard Wiedemann <bwiedemann@suse.com>
+Date: Tue, 8 Mar 2016 19:39:47
+# PATCH-FIX-TO-UPSTREAM
+
+Drop build timestamps from png.
+
+--- putty-0.66/icons/mkicon.py.orig	2015-11-07 10:16:40.000000000 +0000
++++ putty-0.66/icons/mkicon.py	2016-03-08 18:34:34.600917451 +0000
+@@ -912,7 +912,7 @@
+     assert minx >= 0 and miny >= 0 and maxx <= width and maxy <= width
+ 
+     block = render(canvas, 0, 0, width, width)
+-    p = os.popen("convert -depth 8 -size %dx%d rgba:- %s" % (width,width,fname), "w")
++    p = os.popen("convert -strip -depth 8 -size %dx%d rgba:- %s" % (width,width,fname), "w")
+     assert len(block) == width
+     for line in block:
+         assert len(line) == width

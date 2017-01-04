@@ -1,0 +1,13 @@
+Index: rnd_jue-3.3.0.0/src/Makefile
+===================================================================
+--- rnd_jue-3.3.0.0.orig/src/Makefile
++++ rnd_jue-3.3.0.0/src/Makefile
+@@ -285,7 +285,7 @@ conf_mus.h: conf_mus.c
+ 	@$(MAKE) auto-conf
+ 
+ $(TIMESTAMP_FILE): $(SRCS) $(LIBGAME) $(GAME_EM) $(GAME_SP)
+-	@date '+"%Y-%m-%d %H:%M"' \
++	@date --date=@$${SOURCE_DATE_EPOCH:-$$(date +%s)} '+"%Y-%m-%d %H:%M"' \
+ 	| sed -e 's/^/#define COMPILE_DATE_STRING /' \
+ 	> $(TIMESTAMP_FILE)
+ 

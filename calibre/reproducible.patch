@@ -1,0 +1,11 @@
+--- calibre-2.52.0/src/calibre/linux.py.orig	2016-03-08 17:52:39.576917451 +0000
++++ calibre-2.52.0/src/calibre/linux.py	2016-03-08 17:52:49.552917451 +0000
+@@ -553,7 +553,7 @@
+             '--exec-file':['py', 'recipe'],
+             '--add-simple-plugin':['py'],
+             '--inspect-mobi':['mobi', 'azw', 'azw3'],
+-            '--viewer':list(available_input_formats()),
++            '--viewer':list(available_input_formats()).sort(),
+         })
+         f.write(textwrap.dedent('''
+         _ebook_device_ls()

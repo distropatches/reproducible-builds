@@ -1,0 +1,11 @@
+--- crosstool-ng/docs/ct-ng.1.in.orig	2015-11-18 05:29:15.000000000 +0000
++++ crosstool-ng/docs/ct-ng.1.in	2016-03-16 14:46:58.135659000 +0000
+@@ -155,7 +155,7 @@
+ to have the meaning of the exit values.
+ ."
+ .SH BUGS
+-As of today (@@CT_DATE@@), building tarballs is broken. It is difficult to
++As of today (20151120), building tarballs is broken. It is difficult to
+ foresee how all parts of
+ .B crosstool-NG
+ are going to be installed. Each part is needed to build a tarball, as it
