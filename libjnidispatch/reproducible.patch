@@ -1,3 +1,5 @@
+upstreaming in https://github.com/java-native-access/jna/pull/748
+
 Index: jna-4.2.1/build.xml
 ===================================================================
 --- jna-4.2.1.orig/build.xml
@@ -9,7 +11,7 @@ Index: jna-4.2.1/build.xml
 -  <tstamp>
 -    <format property="year" pattern="yyyy" locale="en,US"/>
 -  </tstamp>
-+  <property name="year" value="2015"/>
++  <property name="year" value="2016"/>
    <property name="copyright"
              value="Copyright &amp;copy; 2007-${year} Timothy Wall. All Rights Reserved."/>
    <buildnumber/>
