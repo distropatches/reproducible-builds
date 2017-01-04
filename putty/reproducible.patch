@@ -1,12 +1,27 @@
-From: Bernhard Wiedemann <bwiedemann@suse.com>
-Date: Tue, 8 Mar 2016 19:39:47
-# PATCH-FIX-TO-UPSTREAM
+From 6c7e955210a8d43082a2b0e4fd44af183a67f34e Mon Sep 17 00:00:00 2001
+From: "Bernhard M. Wiedemann" <bwiedemann+git@suse.de>
+Date: Wed, 4 Jan 2017 13:56:51 +0000
+Subject: [PATCH] Drop build timestamps from generated png files
 
-Drop build timestamps from png.
+to enable reproducible builds
+---
+ icons/mkicon.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
---- putty-0.66/icons/mkicon.py.orig	2015-11-07 10:16:40.000000000 +0000
-+++ putty-0.66/icons/mkicon.py	2016-03-08 18:34:34.600917451 +0000
-@@ -912,7 +912,7 @@
+diff --git a/icons/mkicon.py b/icons/mkicon.py
+index 3e6d81c..f189c01 100755
+--- a/icons/mkicon.py
++++ b/icons/mkicon.py
+@@ -893,7 +893,7 @@ def testrun(func, fname):
+     for canvas in canvases:
+         minx, miny, maxx, maxy = bbox(canvas)
+         block.extend(render(canvas, minx-2, miny-2, minx-2+wid, maxy+2))
+-    p = os.popen("convert -depth 8 -size %dx%d rgb:- %s" % (wid,ht,fname), "w")
++    p = os.popen("convert -strip -depth 8 -size %dx%d rgb:- %s" % (wid,ht,fname), "w")
+     assert len(block) == ht
+     for line in block:
+         assert len(line) == wid
+@@ -912,7 +912,7 @@ def drawicon(func, width, fname, orangebackground = 0):
      assert minx >= 0 and miny >= 0 and maxx <= width and maxy <= width
  
      block = render(canvas, 0, 0, width, width)
@@ -15,3 +30,6 @@ Drop build timestamps from png.
      assert len(block) == width
      for line in block:
          assert len(line) == width
+-- 
+1.8.5.6
+
