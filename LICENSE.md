@@ -1,6 +1,6 @@
 Individual patches are licensed under the same terms
-as the project they apply to
-but usually they are too insignifant to be copyrightable anyway
+as the project they apply to,
+but usually they are too insignificant to be copyrightable anyway.
 
 The collection is licensed under
 MIT License
