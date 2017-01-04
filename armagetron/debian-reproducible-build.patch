@@ -1,0 +1,73 @@
+From: Markus Koschany <apo@debian.org>
+Date: Tue, 12 Jul 2016 09:56:00 +0200
+Subject: reproducible build
+
+Make the build reproducible.
+
+Forwarded: no
+---
+ src/doc/HtmlMakefile    | 4 ++--
+ src/doc/Makefile.in     | 4 ++--
+ src/doc/html.m4.in      | 2 +-
+ src/doc/net/Makefile.in | 4 ++--
+ 4 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/src/doc/HtmlMakefile b/src/doc/HtmlMakefile
+index c979997..9d44d87 100644
+--- a/src/doc/HtmlMakefile
++++ b/src/doc/HtmlMakefile
+@@ -15,9 +15,9 @@ $(htmlm4): $(top_builddir)/config.status Makefile $(top_srcdir)/src/doc/html.m4.
+ if HAVE_M4
+ %.html : $(srcdir)/%.html.m4 %.html.dep $(htmlm4) Makefile 
+ if DATE_R
+-	{ echo "define(CHANGEDATE,`date +"%b %d %Y" -r $<`) include($(htmlm4))" ; cat $< ; } | m4 -I ${srcdir} > $@ || cp $< $@
++	{ echo "define(CHANGEDATE, 20160712) include($(htmlm4))" ; cat $< ; } | m4 -I ${srcdir} > $@ || cp $< $@
+ else
+-	{ echo "define(CHANGEDATE,`date +"%b %d %Y"`) include($(htmlm4))" ; cat $< ; } | m4 -I ${srcdir} > $@ || cp $< $@
++	{ echo "define(CHANGEDATE, 20160712) include($(htmlm4))" ; cat $< ; } | m4 -I ${srcdir} > $@ || cp $< $@
+ endif
+ 
+ %.dep: %.m4 Makefile
+diff --git a/src/doc/Makefile.in b/src/doc/Makefile.in
+index a2e5d4e..df92eff 100644
+--- a/src/doc/Makefile.in
++++ b/src/doc/Makefile.in
+@@ -740,8 +740,8 @@ $(htmlm4): $(top_builddir)/config.status Makefile $(top_srcdir)/src/doc/html.m4.
+ 	cd ${top_builddir}; ./config.status src/doc/html.m4
+ 
+ @HAVE_M4_TRUE@%.html : $(srcdir)/%.html.m4 %.html.dep $(htmlm4) Makefile 
+-@DATE_R_TRUE@@HAVE_M4_TRUE@	{ echo "define(CHANGEDATE,`date +"%b %d %Y" -r $<`) include($(htmlm4))" ; cat $< ; } | m4 -I ${srcdir} > $@ || cp $< $@
+-@DATE_R_FALSE@@HAVE_M4_TRUE@	{ echo "define(CHANGEDATE,`date +"%b %d %Y"`) include($(htmlm4))" ; cat $< ; } | m4 -I ${srcdir} > $@ || cp $< $@
++@DATE_R_TRUE@@HAVE_M4_TRUE@	{ echo "define(CHANGEDATE, 20160712) include($(htmlm4))" ; cat $< ; } | m4 -I ${srcdir} > $@ || cp $< $@
++@DATE_R_FALSE@@HAVE_M4_TRUE@	{ echo "define(CHANGEDATE, 20160712) include($(htmlm4))" ; cat $< ; } | m4 -I ${srcdir} > $@ || cp $< $@
+ 
+ @HAVE_M4_TRUE@%.dep: %.m4 Makefile
+ @HAVE_M4_TRUE@	echo $*.dep ":\\" > $@
+diff --git a/src/doc/html.m4.in b/src/doc/html.m4.in
+index 8c75527..9127fb2 100644
+--- a/src/doc/html.m4.in
++++ b/src/doc/html.m4.in
+@@ -6,7 +6,7 @@ define(HEADSTART,dnl
+ <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+ changequote([,])dnl
+-   <meta name="date" content="esyscmd(echo -n [`date +%Y-%m-%dT%H:%M:%S+01:00`])">
++   <meta name="date" content="esyscmd(echo -n [20160712])">
+ 
+    <meta name="author" content="Manuel Moos">
+    <title>$1</title>)dnl
+diff --git a/src/doc/net/Makefile.in b/src/doc/net/Makefile.in
+index 5cc08c4..4944d61 100644
+--- a/src/doc/net/Makefile.in
++++ b/src/doc/net/Makefile.in
+@@ -549,8 +549,8 @@ $(htmlm4): $(top_builddir)/config.status Makefile $(top_srcdir)/src/doc/html.m4.
+ 	cd ${top_builddir}; ./config.status src/doc/html.m4
+ 
+ @HAVE_M4_TRUE@%.html : $(srcdir)/%.html.m4 %.html.dep $(htmlm4) Makefile 
+-@DATE_R_TRUE@@HAVE_M4_TRUE@	{ echo "define(CHANGEDATE,`date +"%b %d %Y" -r $<`) include($(htmlm4))" ; cat $< ; } | m4 -I ${srcdir} > $@ || cp $< $@
+-@DATE_R_FALSE@@HAVE_M4_TRUE@	{ echo "define(CHANGEDATE,`date +"%b %d %Y"`) include($(htmlm4))" ; cat $< ; } | m4 -I ${srcdir} > $@ || cp $< $@
++@DATE_R_TRUE@@HAVE_M4_TRUE@	{ echo "define(CHANGEDATE, 20160712) include($(htmlm4))" ; cat $< ; } | m4 -I ${srcdir} > $@ || cp $< $@
++@DATE_R_FALSE@@HAVE_M4_TRUE@	{ echo "define(CHANGEDATE, 20160712) include($(htmlm4))" ; cat $< ; } | m4 -I ${srcdir} > $@ || cp $< $@
+ 
+ @HAVE_M4_TRUE@%.dep: %.m4 Makefile
+ @HAVE_M4_TRUE@	echo $*.dep ":\\" > $@
