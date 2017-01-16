@@ -1,0 +1,48 @@
+upstreaming in https://sourceforge.net/p/gsoap2/bugs/1094/
+
+Index: gsoap-2.8.40/gsoap/src/symbol2.c
+===================================================================
+--- gsoap-2.8.40.orig/gsoap/src/symbol2.c
++++ gsoap-2.8.40/gsoap/src/symbol2.c
+@@ -34,6 +34,7 @@ A commercial use license is available fr
+ --------------------------------------------------------------------------------
+ */
+ 
++#include <limits.h>
+ #include "soapcpp2.h"
+ 
+ #ifdef HAVE_CONFIG_H
+@@ -758,6 +759,33 @@ identify(FILE *fd, const char *fn)
+ {
+   time_t t = time(NULL), *p = &t;
+   char tmp[256];
++  char *source_date_epoch;
++  unsigned long long epoch;
++  char *endptr;
++
++  source_date_epoch = getenv("SOURCE_DATE_EPOCH");
++  if (source_date_epoch) {
++    errno = 0;
++    epoch = strtoull(source_date_epoch, &endptr, 10);
++    if ((errno == ERANGE && (epoch == ULLONG_MAX || epoch == 0))
++	|| (errno != 0 && epoch == 0)) {
++      fprintf(stderr, "Environment variable $SOURCE_DATE_EPOCH: strtoull: %s\n", strerror(errno));
++      exit(EXIT_FAILURE);
++    }
++    if (endptr == source_date_epoch) {
++      fprintf(stderr, "Environment variable $SOURCE_DATE_EPOCH: No digits were found: %s\n", endptr);
++      exit(EXIT_FAILURE);
++    }
++    if (*endptr != '\0') {
++      fprintf(stderr, "Environment variable $SOURCE_DATE_EPOCH: Trailing garbage: %s\n", endptr);
++      exit(EXIT_FAILURE);
++    }
++    if (epoch > ULONG_MAX) {
++      fprintf(stderr, "Environment variable $SOURCE_DATE_EPOCH: value must be smaller than or equal to %lu but was found to be: %llu \n", ULONG_MAX, epoch);
++      exit(EXIT_FAILURE);
++    }
++    t=epoch;
++  }
+   strftime(tmp, 256, "%Y-%m-%d %H:%M:%S GMT", gmtime(p));
+   fprintf(fd, "\n\nSOAP_SOURCE_STAMP(\"@(#) %s ver " VERSION " %s\")\n", fn, tmp);
+ }
