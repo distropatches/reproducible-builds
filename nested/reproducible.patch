@@ -1,0 +1,10 @@
+Index: nested-1.2.2/nested/examples/Manpage/Manpage.t2t
+===================================================================
+--- nested-1.2.2/nested/examples/Manpage/Manpage.t2t
++++ nested-1.2.2/nested/examples/Manpage/Manpage.t2t
+@@ -246,4 +246,4 @@ http://sourceforge.net/p/nestededitor/ti
+ 
+ = COPYRIGHT =[copyright]
+ 
+-Copyright (C) %%date(%Y) Carlos Jenkins, GNU GPL v2
++Copyright (C) 2017 Carlos Jenkins, GNU GPL v2
