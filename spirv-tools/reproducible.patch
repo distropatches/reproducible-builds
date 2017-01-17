@@ -1,0 +1,24 @@
+upstreaming in https://github.com/KhronosGroup/SPIRV-Tools/pull/528
+
+Index: spirv-tools-1.1.g41/utils/update_build_version.py
+===================================================================
+--- spirv-tools-1.1.g41.orig/utils/update_build_version.py
++++ spirv-tools-1.1.g41/utils/update_build_version.py
+@@ -31,6 +31,8 @@
+ from __future__ import print_function
+ 
+ import datetime
++import time
++import os
+ import os.path
+ import re
+ import subprocess
+@@ -89,7 +91,7 @@ def describe(dir):
+             return command_output(
+                 ['git', 'rev-parse', 'HEAD'], dir).rstrip().decode()
+         except:
+-            return 'unknown hash, {}'.format(datetime.date.today().isoformat())
++            return 'unknown hash, {}'.format(datetime.date.fromtimestamp(int(os.environ.get('SOURCE_DATE_EPOCH', time.time()))).isoformat())
+ 
+ 
+ def main():

@@ -1,0 +1,28 @@
+upstreaming https://github.com/libjpeg-turbo/libjpeg-turbo/pull/138
+
+Index: libjpeg-turbo-1.5.1/configure
+===================================================================
+--- libjpeg-turbo-1.5.1.orig/configure
++++ libjpeg-turbo-1.5.1/configure
+@@ -13427,7 +13427,7 @@ fi
+ if test "${with_build_date+set}" = set; then :
+   withval=$with_build_date; BUILD="$with_build_date"
+ else
+-  BUILD=`date +%Y%m%d`
++  BUILD=`date --utc --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m%d`
+ fi
+ 
+ 
+Index: libjpeg-turbo-1.5.1/configure.ac
+===================================================================
+--- libjpeg-turbo-1.5.1.orig/configure.ac
++++ libjpeg-turbo-1.5.1/configure.ac
+@@ -23,7 +23,7 @@ AC_PROG_LN_S
+ 
+ AC_ARG_WITH([build-date], [Use custom build string to enable reproducible builds (default: YYMMDD)],
+   [BUILD="$with_build_date"],
+-  [BUILD=`date +%Y%m%d`])
++  [BUILD=`date --utc --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m%d`])
+ 
+ PKG_PROG_PKG_CONFIG
+ 

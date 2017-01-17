@@ -1,0 +1,15 @@
+upstreaming in https://rt.cpan.org/Ticket/Display.html?id=119887
+
+Index: common-sense-3.74/sense.pm.PL
+===================================================================
+--- common-sense-3.74.orig/sense.pm.PL
++++ common-sense-3.74/sense.pm.PL
+@@ -45,7 +45,7 @@ while (<DATA>) {
+       print "   # use strict, use utf8; use feature;\n";
+       printf "   \$^H |= 0x%x;\n", $H;
+ 
+-      if (my @features = grep /^feature_/, keys %H) {
++      if (my @features = grep /^feature_/, sort keys %H) {
+          print "   \@^H{qw(@features)} = (1) x ", (scalar @features), ";\n";
+       }
+    } elsif (/^VERSION/) {
