@@ -1,0 +1,14 @@
+upstreaming in https://github.com/rust-lang/cargo/pull/3554
+Index: cargo-0.13.0/Makefile.in
+===================================================================
+--- cargo-0.13.0.orig/Makefile.in
++++ cargo-0.13.0/Makefile.in
+@@ -20,7 +20,7 @@ else
+ CFG_RELEASE=$(CFG_RELEASE_NUM)$(CFG_RELEASE_LABEL)
+ CFG_PACKAGE_VERS=$(CFG_RELEASE)
+ endif
+-CFG_BUILD_DATE = $(shell date +%F)
++CFG_BUILD_DATE = $(shell date --utc --date="@$${SOURCE_DATE_EPOCH:-$$(date +%s)}" +%F)
+ 
+ ifeq ($(wildcard .git),)
+ CFG_VERSION = $(CFG_RELEASE) (built $(CFG_BUILD_DATE))

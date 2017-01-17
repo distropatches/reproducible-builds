@@ -1,0 +1,15 @@
+upstreaming in https://github.com/jordansissel/xdotool/pull/159
+
+Index: xdotool-2.2012+git.20130201.65cb0b1/version.sh
+===================================================================
+--- xdotool-2.2012+git.20130201.65cb0b1.orig/version.sh
++++ xdotool-2.2012+git.20130201.65cb0b1/version.sh
+@@ -6,7 +6,7 @@ fi
+ 
+ if [ -z "$MAJOR" -o -z "$RELEASE" -o -z "$REVISION" ] ; then
+   MAJOR="3"
+-  RELEASE="$(date +%Y%m%d)"
++  RELEASE="$(date --utc --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y%m%d)"
+   REVISION=1
+   #$([ -d .svn ] && svn info . | awk '/Revision:/ {print $2}')
+   : ${REVISION=:0}
