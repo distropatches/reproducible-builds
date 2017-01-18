@@ -1,4 +1,5 @@
-upstreaming in https://github.com/KhronosGroup/SPIRV-Tools/pull/528
+merged upstream in https://github.com/KhronosGroup/SPIRV-Tools/pull/528
+with follow-up cleanup commit
 
 Index: spirv-tools-1.1.g41/utils/update_build_version.py
 ===================================================================
