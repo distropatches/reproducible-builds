@@ -1,0 +1,13 @@
+did not try to upstream yet
+
+Index: db-4.5.20/dist/RELEASE
+===================================================================
+--- db-4.5.20.orig/dist/RELEASE
++++ db-4.5.20/dist/RELEASE
+@@ -7,5 +7,5 @@ DB_VERSION="$DB_VERSION_MAJOR.$DB_VERSIO
+ 
+ DB_VERSION_UNIQUE_NAME=`printf "_%d%03d" $DB_VERSION_MAJOR $DB_VERSION_MINOR`
+ 
+-DB_RELEASE_DATE=`date "+%B %e, %Y"`
++DB_RELEASE_DATE=`date --utc --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" "+%B %e, %Y"`
+ DB_VERSION_STRING="Berkeley DB $DB_VERSION: ($DB_RELEASE_DATE)"

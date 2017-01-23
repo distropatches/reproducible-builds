@@ -1,15 +1,19 @@
+upstreaming in https://github.com/thezbyg/gpick/pull/138
+
 Index: gpick_0.2.5/tools/gpick.py
 ===================================================================
 --- gpick_0.2.5.orig/tools/gpick.py
 +++ gpick_0.2.5/tools/gpick.py
-@@ -147,8 +147,8 @@ class GpickEnvironment(SConsEnvironment)
+@@ -146,9 +146,10 @@ class GpickEnvironment(SConsEnvironment)
+ 		except:
  			revision = 'not under version control system'
  
++		buildtime = time.gmtime(int(os.environ.get('SOURCE_DATE_EPOCH', time.time())))
  		self.Replace(GPICK_BUILD_REVISION = revision,
 -			GPICK_BUILD_DATE =  time.strftime ("%Y-%m-%d"),
 -			GPICK_BUILD_TIME =  time.strftime ("%H:%M:%S"));	
-+			GPICK_BUILD_DATE =  time.strftime ("%Y-%m-%d", time.gmtime(int(os.environ.get('SOURCE_DATE_EPOCH', time.time())))),
-+			GPICK_BUILD_TIME =  time.strftime ("%H:%M:%S"));
++			GPICK_BUILD_DATE =  time.strftime ("%Y-%m-%d", buildtime),
++			GPICK_BUILD_TIME =  time.strftime ("%H:%M:%S", buildtime));
  
  def RegexEscape(str):
  	return str.replace('\\', '\\\\')
