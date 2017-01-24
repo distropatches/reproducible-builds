@@ -1,0 +1,26 @@
+From 978c5d6bb40d4fc784335fcfc335691747f2a0ab Mon Sep 17 00:00:00 2001
+From: Niko Tyni <ntyni@debian.org>
+Date: Tue, 5 Jul 2016 12:09:59 +0200
+Subject: Make the output of ExtUtils::ParseXS reproducible
+
+Author: Chris Lamb <lamby@debian.org>
+Bug-Debian: https://bugs.debian.org/829296
+Bug: https://rt.perl.org/Ticket/Display.html?id=128517
+Patch-Name: fixes/extutils-parsexs-reproducibility.diff
+---
+ dist/ExtUtils-ParseXS/lib/ExtUtils/ParseXS.pm | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/dist/ExtUtils-ParseXS/lib/ExtUtils/ParseXS.pm b/dist/ExtUtils-ParseXS/lib/ExtUtils/ParseXS.pm
+index 32d74e1..8c7a663 100644
+--- a/dist/ExtUtils-ParseXS/lib/ExtUtils/ParseXS.pm
++++ b/dist/ExtUtils-ParseXS/lib/ExtUtils/ParseXS.pm
+@@ -686,7 +686,7 @@ EOF
+         var         => $_,
+         do_setmagic => $self->{DoSetMagic},
+         do_push     => undef,
+-      } ) for grep $self->{in_out}->{$_} =~ /OUT$/, keys %{ $self->{in_out} };
++      } ) for grep $self->{in_out}->{$_} =~ /OUT$/, sort keys %{ $self->{in_out} };
+ 
+       my $prepush_done;
+       # all OUTPUT done, so now push the return value on the stack
