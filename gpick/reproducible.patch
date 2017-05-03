@@ -1,4 +1,4 @@
-upstreaming in https://github.com/thezbyg/gpick/pull/138
+upstream in slightly modified form via https://github.com/thezbyg/gpick/pull/138
 
 Index: gpick_0.2.5/tools/gpick.py
 ===================================================================
