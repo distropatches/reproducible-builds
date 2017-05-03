@@ -1,0 +1,39 @@
+Index: xen-4.8.0-testing/extras/mini-os-remote/Makefile
+===================================================================
+--- xen-4.8.0-testing.orig/extras/mini-os-remote/Makefile
++++ xen-4.8.0-testing/extras/mini-os-remote/Makefile
+@@ -163,7 +163,7 @@ $(OBJ_DIR)/$(TARGET): $(OBJS) $(APP_O) a
+ 	$(LD) -r $(LDFLAGS) $(HEAD_OBJ) $(APP_O) $(OBJS) $(LDARCHLIB) $(LDLIBS) -o $@.o
+ 	$(OBJCOPY) -w -G $(GLOBAL_PREFIX)* -G _start $@.o $@.o
+ 	$(LD) $(LDFLAGS) $(LDFLAGS_FINAL) $@.o $(EXTRA_OBJS) -o $@
+-	gzip -f -9 -c $@ >$@.gz
++	gzip -n -f -9 -c $@ >$@.gz
+ 
+ .PHONY: config
+ CONFIG_FILE ?= $(CURDIR)/minios-config.mk
+Index: xen-4.8.0-testing/tools/firmware/etherboot/Makefile
+===================================================================
+--- xen-4.8.0-testing.orig/tools/firmware/etherboot/Makefile
++++ xen-4.8.0-testing/tools/firmware/etherboot/Makefile
+@@ -31,7 +31,7 @@ $T:
+ 	if ! $(FETCHER) _$T $(IPXE_TARBALL_URL); then \
+ 		$(GIT) clone $(IPXE_GIT_URL) $D.git; \
+ 		(cd $D.git && $(GIT) archive --format=tar --prefix=$D/ \
+-		$(IPXE_GIT_TAG) | gzip >../_$T); \
++		$(IPXE_GIT_TAG) | gzip -n >../_$T); \
+ 		rm -rf $D.git; \
+ 	fi
+ 	mv _$T $T
+Index: xen-4.8.0-testing/tools/firmware/etherboot/README
+===================================================================
+--- xen-4.8.0-testing.orig/tools/firmware/etherboot/README
++++ xen-4.8.0-testing/tools/firmware/etherboot/README
+@@ -15,7 +15,7 @@ as on 25th September 2008):
+ 
+  git clone git://git.etherboot.org/scm/gpxe.git
+  cd gpxe
+- git archive --format=tar --prefix=gpxe/ c24bc349ead939d90b5784dbff3cd9fdb9d83ba8 | gzip >../gpxe-git-snapshot.tar.gz
++ git archive --format=tar --prefix=gpxe/ c24bc349ead939d90b5784dbff3cd9fdb9d83ba8 | gzip -n >../gpxe-git-snapshot.tar.gz
+ 
+ ----------------------------------------
+ 

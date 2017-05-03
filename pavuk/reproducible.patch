@@ -1,0 +1,26 @@
+Index: pavuk-0.9.35/configure.in
+===================================================================
+--- pavuk-0.9.35.orig/configure.in
++++ pavuk-0.9.35/configure.in
+@@ -5,7 +5,7 @@ AM_INIT_AUTOMAKE
+ 
+ ALL_LINGUAS="cs de es fr it ja pl sk uk"
+ 
+-REVISION=`date +%Y-%m-%dT%H:%M`
++REVISION=`date --utc --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y-%m-%dT%H:%M`
+ AC_DEFINE_UNQUOTED(REVISION, "$REVISION", [revision number of software])
+ AC_SUBST(REVISION)
+ AC_PREFIX_DEFAULT(/usr/local)
+Index: pavuk-0.9.35/configure
+===================================================================
+--- pavuk-0.9.35.orig/configure
++++ pavuk-0.9.35/configure
+@@ -2267,7 +2267,7 @@ am__tar='${AMTAR} chof - "$$tardir"'; am
+ 
+ ALL_LINGUAS="cs de es fr it ja pl sk uk"
+ 
+-REVISION=`date +%Y-%m-%dT%H:%M`
++REVISION=`date --utc --date="@${SOURCE_DATE_EPOCH:-$(date +%s)}" +%Y-%m-%dT%H:%M`
+ 
+ cat >>confdefs.h <<_ACEOF
+ #define REVISION "$REVISION"

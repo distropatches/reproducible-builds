@@ -1,0 +1,26 @@
+Index: xine-ui-0.99.9/misc/desktops/Makefile.am
+===================================================================
+--- xine-ui-0.99.9.orig/misc/desktops/Makefile.am
++++ xine-ui-0.99.9/misc/desktops/Makefile.am
+@@ -31,7 +31,7 @@ desktop_DATA = xine.desktop
+ if XINE_LIST
+ xine.desktop: xine.desktop.in @XINE_LIST@
+ 	$(AM_V_GEN)exec > $@; cat $<; \
+-	@XINE_LIST@; \
++	@XINE_LIST@ | $(AM_V_at)perl -ne 'print join(";",sort(split(";")))' \
+ 	awk '{ printf "%s;", $$1 }' < $(srcdir)/mime.extra
+ else
+ XINE_MIME = $(if $(shell test "$(XINE_CONFIG)" = '' && echo y),$(shell pkg-config --variable=plugindir libxine),$(shell $(XINE_CONFIG) --plugindir))/mime.types
+Index: xine-ui-0.99.9/misc/desktops/Makefile.in
+===================================================================
+--- xine-ui-0.99.9.orig/misc/desktops/Makefile.in
++++ xine-ui-0.99.9/misc/desktops/Makefile.in
+@@ -697,7 +697,7 @@ V ?= $(GNU_VERBOSITY)
+ 
+ @XINE_LIST_TRUE@xine.desktop: xine.desktop.in @XINE_LIST@
+ @XINE_LIST_TRUE@	$(AM_V_GEN)exec > $@; cat $<; \
+-@XINE_LIST_TRUE@	@XINE_LIST@; \
++@XINE_LIST_TRUE@	@XINE_LIST@ | $(AM_V_at)perl -ne 'print join(";",sort(split(";")))' \
+ @XINE_LIST_TRUE@	awk '{ printf "%s;", $$1 }' < $(srcdir)/mime.extra
+ @XINE_LIST_FALSE@xine.desktop: xine.desktop.in $(MIME) $(srcdir)/mime.extra
+ @XINE_LIST_FALSE@	$(AM_V_GEN)exec > $@; \
