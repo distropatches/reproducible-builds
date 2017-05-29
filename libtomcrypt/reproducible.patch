@@ -1,0 +1,33 @@
+Index: libtomcrypt-1.17/makefile.shared
+===================================================================
+--- libtomcrypt-1.17.orig/makefile.shared
++++ libtomcrypt-1.17/makefile.shared
+@@ -249,12 +249,12 @@ testprof/$(LIBTEST):
+ objs: $(OBJECTS)
+ 
+ $(LIBNAME): $(OBJECTS) testprof/$(LIBTEST)
+-	libtool --silent --mode=link gcc $(CFLAGS) `find . -type f | grep "[.]lo" | grep "src/" | xargs` $(EXTRALIBS) -o $(LIBNAME) -rpath $(LIBPATH) -version-info $(VERSION)
++	libtool --mode=link gcc $(CFLAGS) `find . -type f | grep "[.]lo" | sort | grep "src/" | xargs` $(EXTRALIBS) -o $(LIBNAME) -rpath $(LIBPATH) -version-info $(VERSION)
+ 
+ install: $(LIBNAME)
+ 	install -d $(DESTDIR)$(LIBPATH)
+ 	cd testprof ; CFLAGS="$(CFLAGS)" VERSION=$(VERSION) LIBPATH=$(LIBPATH) LIBTEST=$(LIBTEST) LIBTEST_S=$(LIBTEST_S) DESTDIR=$(DESTDIR) make -f makefile.shared install
+-	libtool --silent --mode=install install -c libtomcrypt.la $(DESTDIR)$(LIBPATH)/libtomcrypt.la
++	libtool --mode=install install -c libtomcrypt.la $(DESTDIR)$(LIBPATH)/libtomcrypt.la
+ 	install -d $(DESTDIR)$(INCPATH)
+ 	install $(HEADERS) $(DESTDIR)$(INCPATH)
+ 
+Index: libtomcrypt-1.17/testprof/makefile.shared
+===================================================================
+--- libtomcrypt-1.17.orig/testprof/makefile.shared
++++ libtomcrypt-1.17/testprof/makefile.shared
+@@ -18,7 +18,7 @@ endif
+ default: $(LIBTEST)
+ 
+ $(LIBTEST): $(OBJECTS)
+-	libtool --silent --mode=link gcc $(CFLAGS) `find . -type f | grep "[.]lo" |  xargs` -o $@ -rpath $(LIBPATH) -version-info $(VERSION)
++	libtool --mode=link gcc $(CFLAGS) `find . -type f | grep "[.]lo" | sort | xargs` -o $@ -rpath $(LIBPATH) -version-info $(VERSION)
+ 
+ install: $(LIBTEST)
+-	libtool --silent --mode=install install -c $(LIBTEST) $(DESTDIR)$(LIBPATH)/$(LIBTEST)
++	libtool --mode=install install -c $(LIBTEST) $(DESTDIR)$(LIBPATH)/$(LIBTEST)

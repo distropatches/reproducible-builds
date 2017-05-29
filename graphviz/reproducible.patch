@@ -1,0 +1,15 @@
+Index: graphviz-2.38.0/lib/sfio/features/sfio
+===================================================================
+--- graphviz-2.38.0.orig/lib/sfio/features/sfio
++++ graphviz-2.38.0/lib/sfio/features/sfio
+@@ -260,9 +260,7 @@ tst	output{
+ 
+ 		unlink(file);
+ 	
+-		if(4*mmtm <= 3*rdtm)		/* mmap is great! */
+-			printf("#define _mmap_worthy	2	\n");
+-		else if(4*mmtm <= 5*rdtm)	/* mmap is good	*/
++			/* mmap is good	*/
+ 			printf("#define _mmap_worthy	1	\n");
+ 	
+ 		return 0;
