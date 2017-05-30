@@ -1,0 +1,28 @@
+upstream via https://sourceforge.net/p/scintilla/bugs/1946/
+
+Index: scintilla/gtk/makefile
+===================================================================
+--- scintilla.orig/gtk/makefile
++++ scintilla/gtk/makefile
+@@ -92,7 +92,7 @@ GLIB_GENMARSHAL_FLAGS = --prefix=scintil
+ .list.c:
+ 	$(GLIB_GENMARSHAL) --body $(GLIB_GENMARSHAL_FLAGS) $< > $@
+ 
+-LEXOBJS:=$(addsuffix .o,$(basename $(notdir $(wildcard ../lexers/Lex*.cxx))))
++LEXOBJS:=$(addsuffix .o,$(basename $(sort $(notdir $(wildcard ../lexers/Lex*.cxx)))))
+ 
+ all: $(COMPLIB)
+ 
+Index: scintilla/win32/makefile
+===================================================================
+--- scintilla.orig/win32/makefile
++++ scintilla/win32/makefile
+@@ -58,7 +58,7 @@ analyze:
+ deps:
+ 	$(CXX) -MM $(CXXFLAGS) *.cxx ../src/*.cxx ../lexlib/*.cxx ../lexers/*.cxx >deps.mak
+ 
+-LEXOBJS:=$(addsuffix .o,$(basename $(notdir $(wildcard ../lexers/Lex*.cxx))))
++LEXOBJS:=$(addsuffix .o,$(basename $(sort $(notdir $(wildcard ../lexers/Lex*.cxx)))))
+ 
+ 
+ BASEOBJS = \
