@@ -1,0 +1,19 @@
+ToDo: clean up for upstreaming
+
+Index: tbb-2017_U6/build/version_info_linux.sh
+===================================================================
+--- tbb-2017_U6.orig/build/version_info_linux.sh
++++ tbb-2017_U6/build/version_info_linux.sh
+@@ -20,10 +20,10 @@
+ 
+ # Script used to generate version info string
+ echo "#define __TBB_VERSION_STRINGS(N) \\"
+-echo '#N": BUILD_HOST'"\t\t"`hostname -s`" ("`uname -m`")"'" ENDL \'
++echo '#N": BUILD_HOST'"\t\t"openSUSE" ("`uname -m`")"'" ENDL \'
+ # find OS name in *-release and issue* files by filtering blank lines and lsb-release content out
+ echo '#N": BUILD_OS'"\t\t"`lsb_release -sd 2>/dev/null | grep -ih '[a-z] ' - /etc/*release /etc/issue 2>/dev/null | head -1 | sed -e 's/["\\\\]//g'`'" ENDL \'
+-echo '#N": BUILD_KERNEL'"\t"`uname -srv`'" ENDL \'
++echo '#N": BUILD_KERNEL'"\t"Linux'" ENDL \'
+ echo '#N": BUILD_GCC'"\t\t"`g++ --version </dev/null 2>&1 | grep 'g++'`'" ENDL \'
+ [ -z "$COMPILER_VERSION" ] || echo '#N": BUILD_COMPILER'"\t"$COMPILER_VERSION'" ENDL \'
+ echo '#N": BUILD_LIBC'"\t"`getconf GNU_LIBC_VERSION | grep glibc | sed -e 's/^glibc //'`'" ENDL \'
