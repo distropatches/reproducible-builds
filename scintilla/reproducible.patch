@@ -1,5 +1,7 @@
 upstream via https://sourceforge.net/p/scintilla/bugs/1946/
 
+also applies to scite (has embedded scintilla)
+
 Index: scintilla/gtk/makefile
 ===================================================================
 --- scintilla.orig/gtk/makefile
