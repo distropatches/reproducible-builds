@@ -1,0 +1,34 @@
+diff -Nurp shadowsocks-rust-1.23.5/Cargo.toml shadowsocks-rust-1.23.5-new/Cargo.toml
+--- shadowsocks-rust-1.23.5/Cargo.toml	2025-07-04 22:57:36.000000000 +0800
++++ shadowsocks-rust-1.23.5-new/Cargo.toml	2025-09-09 22:18:05.233776424 +0800
+@@ -265,3 +265,6 @@ tokio = { version = "1", features = ["ne
+ 
+ [lints.clippy]
+ uninlined_format_args = "allow"
++
++[patch.crates-io]
++build-time = { path="vendor/build-time" }
+diff -Nurp shadowsocks-rust-1.23.5/vendor/build-time/src/lib.rs shadowsocks-rust-1.23.5-new/vendor/build-time/src/lib.rs
+--- shadowsocks-rust-1.23.5/vendor/build-time/src/lib.rs	2025-09-09 22:03:02.973957942 +0800
++++ shadowsocks-rust-1.23.5-new/vendor/build-time/src/lib.rs	2025-09-09 22:21:42.603517133 +0800
+@@ -28,14 +28,18 @@ let local_build_time = build_time_local!
+ ```
+ */
+ 
+-use chrono::{DateTime, Local, Utc};
++use chrono::{DateTime, Local, TimeZone, Utc};
+ use once_cell::sync::Lazy;
+ use proc_macro::TokenStream;
+ use proc_macro2::Span;
+ use quote::quote;
++use std::env;
+ use syn::{parse_macro_input, LitStr};
+ 
+-static BUILD_TIME: Lazy<DateTime<Utc>> = Lazy::new(Utc::now);
++static BUILD_TIME: Lazy<DateTime<Utc>> = Lazy::new(|| match env::var("SOURCE_DATE_EPOCH") {
++        Ok(val) => { Utc.timestamp_opt(val.parse::<i64>().unwrap(), 0).unwrap() }
++        Err(_) => Utc::now(),
++    });
+ 
+ /// Build time in UTC.
+ ///

@@ -1,0 +1,20 @@
+--- a/src/main/core-api/java/com/mysql/cj/conf/PropertyDefinitions.java
++++ b/src/main/core-api/java/com/mysql/cj/conf/PropertyDefinitions.java
+@@ -21,7 +21,7 @@
+ package com.mysql.cj.conf;
+ 
+ import java.util.Collections;
+-import java.util.HashMap;
++import java.util.TreeMap;
+ import java.util.Map;
+ 
+ import com.mysql.cj.Messages;
+@@ -899,7 +899,7 @@ public class PropertyDefinitions {
+                 //
+         };
+ 
+-        HashMap<PropertyKey, PropertyDefinition<?>> propertyKeyToPropertyDefinitionMap = new HashMap<>();
++        TreeMap<PropertyKey, PropertyDefinition<?>> propertyKeyToPropertyDefinitionMap = new TreeMap<>();
+         for (PropertyDefinition<?> pdef : pdefs) {
+             propertyKeyToPropertyDefinitionMap.put(pdef.getPropertyKey(), pdef);
+         }

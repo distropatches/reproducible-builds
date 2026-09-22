@@ -1,0 +1,17 @@
+--- a/src/main/org/apache/tools/ant/taskdefs/Zip.java
++++ b/src/main/org/apache/tools/ant/taskdefs/Zip.java
+@@ -846,6 +846,14 @@ public class Zip extends MatchingTask {
+                 archiveType);
+         }
+ 
++        if (fixedModTime == null) {
++            String sde = System.getenv("SOURCE_DATE_EPOCH");
++            if (sde != null) {
++                // the DateUtils.parseLenientDateTime requires miliseconds
++                fixedModTime = sde + "000";
++            }
++        }
++
+         if (fixedModTime != null) {
+             try {
+                 modTimeMillis = DateUtils.parseLenientDateTime(fixedModTime).getTime();

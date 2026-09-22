@@ -1,0 +1,24 @@
+--- a/src/main/org/apache/tools/ant/taskdefs/Manifest.java
++++ b/src/main/org/apache/tools/ant/taskdefs/Manifest.java
+@@ -760,13 +760,15 @@ public class Manifest {
+                     defManifest);
+             }
+             Manifest defaultManifest = new Manifest(new InputStreamReader(in, JAR_CHARSET));
+-            String version = System.getProperty("java.runtime.version");
+-            if (version == null) {
+-                version = System.getProperty("java.vm.version");
++            if (System.getenv("SOURCE_DATE_EPOCH") == null) {
++                String version = System.getProperty("java.runtime.version");
++                if (version == null) {
++                    version = System.getProperty("java.vm.version");
++                }
++                Attribute createdBy = new Attribute("Created-By", version
++                        + " (" + System.getProperty("java.vm.vendor") + ")");
++                defaultManifest.getMainSection().storeAttribute(createdBy);
+             }
+-            Attribute createdBy = new Attribute("Created-By", version
+-                    + " (" + System.getProperty("java.vm.vendor") + ")");
+-            defaultManifest.getMainSection().storeAttribute(createdBy);
+             return defaultManifest;
+         } catch (ManifestException e) {
+             throw new BuildException("Default manifest is invalid !!", e);

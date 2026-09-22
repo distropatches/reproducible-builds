@@ -1,0 +1,34 @@
+--- icedtea-web-1.8.8/netx/net/sourceforge/jnlp/util/docprovider/formatters/formatters/HtmlFormatter.java	2025-06-19 10:58:20.778943754 +0200
++++ icedtea-web-1.8.8/netx/net/sourceforge/jnlp/util/docprovider/formatters/formatters/HtmlFormatter.java	2025-06-19 10:58:35.151598324 +0200
+@@ -95,6 +95,10 @@
+         if (includeXmlHeader) {
+             xml = "<?xml version=\"1.0\" encoding=\"" + encoding + "\"?>\n";
+         }
++        Date now = new Date();
++        if (System.getenv("SOURCE_DATE_EPOCH") != null) {
++            now = new Date(1000 * Long.parseLong(System.getenv("SOURCE_DATE_EPOCH")));
++        }
+         return xml + "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n"
+                 + "<html xmlns=\"http://www.w3.org/1999/xhtml\" xml:lang=\"en\">\n"
+                 + "  <head>\n"
+@@ -102,7 +106,7 @@
+                 + "    <meta http-equiv=\"content-type\" content=\"application/xhtml+xml; charset=" + encoding + "\" />\n"
+                 + "  </head>\n"
+                 + "  <body>\n"
+-                + "    <H5  align=\"right\">" + id + ": " + getVersion() + ", " + JNLPRuntime.getLocalisedTimeStamp(new Date()) + "</H5>";
++                + "    <H5  align=\"right\">" + id + ": " + getVersion() + ", " + JNLPRuntime.getLocalisedTimeStamp(now) + "</H5>";
+     }
+ 
+     @Override
+--- icedtea-web-1.8.8/netx/net/sourceforge/jnlp/util/docprovider/formatters/formatters/ManFormatter.java	2025-06-19 10:58:20.778977773 +0200
++++ icedtea-web-1.8.8/netx/net/sourceforge/jnlp/util/docprovider/formatters/formatters/ManFormatter.java	2025-06-19 10:58:35.152120367 +0200
+@@ -118,6 +118,9 @@
+ 
+     private String getManPageDate(boolean localize) {
+         Date now = new Date();
++        if (System.getenv("SOURCE_DATE_EPOCH") != null) {
++            now = new Date(1000 * Long.parseLong(System.getenv("SOURCE_DATE_EPOCH")));
++        }
+         Calendar c = Calendar.getInstance();
+         c.setTime(now);
+         int day = c.get(Calendar.DAY_OF_MONTH);

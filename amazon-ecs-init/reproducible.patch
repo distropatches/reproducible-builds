@@ -1,0 +1,26 @@
+Author: Bernhard M. Wiedemann <bwiedemann suse de>
+Date: 2018-08-30
+Updated: 2026-03-31
+
+https://bugzilla.opensuse.org/show_bug.cgi?id=1062303
+
+Without this patch, there was always variation
+in /usr/sbin/amazon-ecs-init differs in ELF section .gopclntab
+  b7ed20 7a5f1e00 285f1e00 2f746d70 2f746d70  z_..(_../tmp/tmp
+- b7ed30 2e6a4867 4463556e 6c46702f 7372632f  .jHgDcUnlFp/src/
++ b7ed30 2e385731 596d4c63 556a462f 7372632f  .8W1YmLcUjF/src/
+  b7ed40 67697468 75622e63 6f6d2f61 77732f61  github.com/aws/a
+
+See https://reproducible-builds.org/ for why this matters.
+
+--- amazon-ecs-agent-1.102.1.orig/scripts/gobuild.sh    2026-03-06 22:46:03.000000000 +0100
++++ amazon-ecs-agent-1.102.1/scripts/gobuild.sh 2026-03-31 12:48:19.608361562 +0200
+@@ -15,7 +15,7 @@
+ set -x
+ set -e
+ export TOPWD="$(pwd)"
+-export BUILDDIR="$(mktemp -d)"
++export BUILDDIR="$TOPWD/build"
+ export SRCPATH="${BUILDDIR}/src/github.com/aws/amazon-ecs-agent"
+ export GOPATH="${TOPWD}:${BUILDDIR}"
+ export GO111MODULE="auto"

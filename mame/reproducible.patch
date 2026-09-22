@@ -1,0 +1,21 @@
+diff -Pdpru mame-mame0261.orig/scripts/build/makedep.py mame-mame0261/scripts/build/makedep.py
+--- mame-mame0261.orig/scripts/build/makedep.py	2023-11-27 23:47:14.000000000 +0300
++++ mame-mame0261/scripts/build/makedep.py	2024-01-18 21:01:55.694442744 +0300
+@@ -432,7 +432,7 @@ class DriverFilter:
+             elif text:
+                 if (len(text) >= 2) and ((text[0] == '"') or (text[0] == "'")) and (text[0] == text[-1]):
+                     text = text[1:-1]
+-                paths = glob.glob(os.path.join(basepath, *text.split('/')))
++                paths = sorted(glob.glob(os.path.join(basepath, *text.split('/'))))
+                 if not paths:
+                     sys.stderr.write('%s:%s: Pattern "%s" did not match any source files\n' % (path, parser.input_line, text))
+                     sys.exit(1)
+@@ -1003,6 +1003,8 @@ def collect_sources(root, sources):
+         fullpath = os.path.join(root, source)
+         if os.path.isdir(fullpath):
+             for subdir, dirs, files in os.walk(fullpath):
++                dirs.sort()
++                files.sort()
+                 for candidate in files:
+                     if os.path.splitext(candidate)[1] == '.cpp':
+                         if subdir != fullpath:

@@ -1,0 +1,63 @@
+--- src/tools/json_schema_compiler/cpp_util.py.orig	2024-12-08 18:35:12.604673841 +0100
++++ src/tools/json_schema_compiler/cpp_util.py	2024-12-20 14:33:48.193965844 +0100
+@@ -11,9 +11,9 @@ import os
+ import posixpath
+ import re
+ 
+-CHROMIUM_LICENSE = ("""// Copyright %d The Chromium Authors
++CHROMIUM_LICENSE = ("""// Copyright 2022 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+-// found in the LICENSE file.""" % datetime.now().year)
++// found in the LICENSE file.""")
+ GENERATED_FILE_MESSAGE = """// GENERATED FROM THE API DEFINITION IN
+ //   %s
+ // by tools/json_schema_compiler.
+--- src/tools/json_to_struct/json_to_struct.py.orig	2025-07-19 11:32:45.069979393 +0200
++++ src/tools/json_to_struct/json_to_struct.py	2025-08-15 15:02:55.044700914 +0200
+@@ -84,7 +84,7 @@ import java_element_generator
+ import struct_generator
+ 
+ 
+-HEAD = u"""// Copyright %d The Chromium Authors
++HEAD = u"""// Copyright 2022 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -316,7 +316,7 @@ def GenerateStruct(basepath, output_root
+     year: Year to display next to the copy-right in the header.
+   """
+   year = int(year) if year else datetime.now().year
+-  head = HEAD % (year, schema_filename, description_filename)
++  head = HEAD % (schema_filename, description_filename)
+   _GenerateH(basepath, output_root, head, namespace, schema, description)
+   _GenerateCC(basepath, output_root, head, namespace, schema, description)
+ 
+--- src/tools/json_schema_compiler/feature_compiler.py.orig	2024-12-08 18:35:12.604673841 +0100
++++ src/tools/json_schema_compiler/feature_compiler.py	2024-12-20 14:34:28.740897256 +0100
+@@ -17,7 +17,7 @@ import json_parse
+ 
+ # The template for the header file of the generated FeatureProvider.
+ HEADER_FILE_TEMPLATE = """
+-// Copyright %(year)s The Chromium Authors
++// Copyright 2022 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -41,7 +41,7 @@ void %(method_name)s(FeatureProvider* pr
+ 
+ # The beginning of the .cc file for the generated FeatureProvider.
+ CC_FILE_BEGIN = """
+-// Copyright %(year)s The Chromium Authors
++// Copyright 2022 The Chromium Authors
+ // Use of this source code is governed by a BSD-style license that can be
+ // found in the LICENSE file.
+ 
+@@ -987,8 +987,6 @@ class FeatureCompiler(object):
+         self._method_name,
+         'source_files':
+         str([ToPosixPath(f) for f in self._source_files]),
+-        'year':
+-        str(datetime.now().year)
+     })
+     if not os.path.exists(self._out_root):
+       os.makedirs(self._out_root)
