@@ -1,0 +1,40 @@
+---
+ setuptools/tests/test_wheel.py     |    8 ++++----
+
+--- a/setuptools/tests/test_wheel.py
++++ b/setuptools/tests/test_wheel.py
+@@ -417,30 +417,30 @@ WHEEL_INSTALL_TESTS: tuple[dict[str, Any
+     dict(
+         id='requires_ensure_order',
+         install_requires="""
+-        foo
+         bar
+         baz
++        foo
+         qux
+         """,
+         extras_require={
+             'extra': """
+-            foobar>3
+             barbaz>4
+             bazqux>5
++            foobar>3
+             quxzap>6
+             """,
+         },
+         requires_txt=DALS(
+             """
+-            foo
+             bar
+             baz
++            foo
+             qux
+ 
+             [extra]
+-            foobar>3
+             barbaz>4
+             bazqux>5
++            foobar>3
+             quxzap>6
+             """
+         ),
