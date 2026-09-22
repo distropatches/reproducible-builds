@@ -1,0 +1,44 @@
+From d8d3f26a770816cc4808fabf9c6bf4dbdd2c98a2 Mon Sep 17 00:00:00 2001
+From: "Bernhard M. Wiedemann" <bwiedemann@suse.de>
+Date: Sun, 23 Aug 2026 06:12:23 +0200
+Subject: [PATCH] Derive zabbix_agent2's compileDate/compileTime from
+ SOURCE_DATE_EPOCH
+
+src/go/Makefile.am fed `date` into `go build -ldflags -X`, so every build of
+the same source produced a different zabbix_agent2 binary. The strings show up
+twice in the binary: in the version data and in the recorded build settings.
+
+See https://reproducible-builds.org/ for why this is good.
+
+Note: This date call only works with GNU date.
+
+Without this patch, two builds of zabbix-7.0.28 differed like this:
+
+    -X golang.zabbix.com/agent2/pkg/version.compileDate=Aug 23 2026
+    +X golang.zabbix.com/agent2/pkg/version.compileDate=Sep 24 2042
+    -X golang.zabbix.com/agent2/pkg/version.compileTime=05:20:13
+    +X golang.zabbix.com/agent2/pkg/version.compileTime=18:38:07
+
+SOURCE_DATE_EPOCH falls back to the current time when unset, so a plain
+`make` is unaffected.
+
+This patch was done while working on reproducible builds for openSUSE.
+---
+ src/go/Makefile.am | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/go/Makefile.am b/src/go/Makefile.am
+index dc9af4bbc1d8..4523209cca6e 100644
+--- a/src/go/Makefile.am
++++ b/src/go/Makefile.am
+@@ -2,8 +2,8 @@
+ 
+ EXTRA_DIST = .
+ 
+-BUILD_TIME=`date +%H:%M:%S`
+-BUILD_DATE=`date +"%b %_d %Y"`
++BUILD_TIME=`date -u -d @$${SOURCE_DATE_EPOCH:-$$(date +%s)} +%H:%M:%S`
++BUILD_DATE=`date -u -d @$${SOURCE_DATE_EPOCH:-$$(date +%s)} +"%b %_d %Y"`
+ GOOS=`go env GOOS`
+ GOARCH=`go env GOARCH`
+ PKG=golang.zabbix.com/agent2/pkg/version

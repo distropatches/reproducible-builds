@@ -1,0 +1,40 @@
+# Arch Linux version of the patch 2025-08-25
+
+diff --git a/configure.ac b/configure.ac
+index 1cf7375a6b3..9b0ca764203 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -1342,6 +1342,18 @@ dnl *         Checks for options given on the command line          *
+ dnl *                                                               *
+ dnl *****************************************************************
+ 
++if test -n "${SOURCE_DATE_EPOCH}"; then
++    BUILD_TIME=`date -u -d "@${SOURCE_DATE_EPOCH}" +%H:%M:%S`
++    BUILD_DATE=`date -u -d "@${SOURCE_DATE_EPOCH}" +"%b %_d %Y"`
++else
++    BUILD_TIME=`date +%H:%M:%S`
++    BUILD_DATE=`date +"%b %_d %Y"`
++fi
++
++AC_SUBST([BUILD_TIME])
++AC_SUBST([BUILD_DATE])
++
++
+ AC_ARG_ENABLE(static,[  --enable-static         Build statically linked binaries],
+ [case "${enableval}" in
+   yes)
+diff --git a/src/go/Makefile.am b/src/go/Makefile.am
+index 875d783f201..b7b8e22491d 100644
+--- a/src/go/Makefile.am
++++ b/src/go/Makefile.am
+@@ -2,8 +2,8 @@
+ 
+ EXTRA_DIST = .
+ 
+-BUILD_TIME=`date +%H:%M:%S`
+-BUILD_DATE=`date +"%b %_d %Y"`
++BUILD_TIME = @BUILD_TIME@
++BUILD_DATE = @BUILD_DATE@
+ GOOS=`go env GOOS`
+ GOARCH=`go env GOARCH`
+ PKG=golang.zabbix.com/agent2/pkg/version
