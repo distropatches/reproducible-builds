@@ -1,6 +1,7 @@
 Upstream via
 https://github.com/stsp/dosemu2/pull/386
 and https://github.com/stsp/dosemu2/commit/8d7ab25daf6f2d8ca09e1598fd11de2d8460255e
+and https://github.com/stsp/dosemu2/pull/640
 
 Index: dosemu-1.4.0.1/src/arch/linux/Makefile.main
 ===================================================================
@@ -28,3 +29,18 @@ Index: dosemu-1.4.0.1/mkpluginhooks
  
  function gendummy {
    for i in $HEADERS; do
+Index: dosemu-1.4.0.1/configure.ac
+===================================================================
+--- dosemu-1.4.0.1.orig/configure.ac
++++ dosemu-1.4.0.1/configure.ac
+@@ -416,7 +416,9 @@ AC_SUBST(PATCHLEVEL2)
+ AC_SUBST(RELEASE_DATE)
+ 
+ AC_DEFINE_UNQUOTED(EMUVER, "$EMUVER")
+-CONFIG_TIME=`date`
++DATE_FMT="%F %T %z"
++SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(date +%s)}"
++CONFIG_TIME=$(date -u -d "@$SOURCE_DATE_EPOCH" "+$DATE_FMT" 2>/dev/null || date -u -r "$SOURCE_DATE_EPOCH" "+$DATE_FMT" 2>/dev/null || date -u "+$DATE_FMT")
+ AC_DEFINE_UNQUOTED(CONFIG_HOST, "$CONFIG_HOST")
+ AC_DEFINE_UNQUOTED(CONFIG_TIME, "$CONFIG_TIME")
+ AC_DEFINE_UNQUOTED(VERSION, $VERSION)
