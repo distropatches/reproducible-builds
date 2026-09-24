@@ -1,0 +1,27 @@
+From c0f9d36907677eeef270fab53ea0ce24db8b0a2e Mon Sep 17 00:00:00 2001
+From: Vagrant Cascadian <vagrant@reproducible-builds.org>
+Date: Mon, 2 May 2022 03:15:19 +0000
+Subject: [PATCH] SConstruct: Explicitly add SOURCE_DATE_EPOCH to the
+ environment.
+
+https://tests.reproducible-builds.org/debian/issues/scons_doesnt_pass_environment_to_build_tools_issue.html
+---
+ SConstruct | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/SConstruct b/SConstruct
+index 37d03bb..1d17a80 100644
+--- a/SConstruct
++++ b/SConstruct
+@@ -241,6 +241,8 @@ def main():
+     except AttributeError:
+         env.Clone = env.Copy
+ 
++    env.Append(ENV={'SOURCE_DATE_EPOCH': os.environ['SOURCE_DATE_EPOCH']})
++
+     if not env['CC']:
+         print("No compiler found in PATH. Please install gcc or another compiler.")
+         Exit(1)
+-- 
+2.36.0
+

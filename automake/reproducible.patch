@@ -1,0 +1,11 @@
+--- automake/doc/local.mk	2026-05-15 11:59:54.269114663 +0800
++++ automake_/doc/local.mk	2026-05-15 11:57:26.054494368 +0800
+@@ -155,6 +155,8 @@
+ 	        exit 1; \
+ 	      } \
+ 	  ) \
++	  && find . -type f ! -name '*.tar.gz' -exec touch -h --no-dereference --date="@0" {} \; \
++	  && tar --sort=name --mtime="@0" --owner=0 --group=0 --numeric-owner -cf - . | gzip -n > amhello-1.0.tar.gz \
+ 	  && rm -rf $(amhello_configury) $$tmp \
+ 	  && mv -f amhello-1.0.tar.gz ..
+ 

@@ -1,0 +1,13 @@
+diff --git a/commandline/library/micronucleus_lib.h b/commandline/library/micronucleus_lib.h
+index e3a4a9e..0758690 100644
+--- a/commandline/library/micronucleus_lib.h
++++ b/commandline/library/micronucleus_lib.h
+@@ -61,7 +61,7 @@ typedef struct _micronucleus_version {
+   unsigned char minor;
+ } micronucleus_version;
+ 
+-#define MICRONUCLEUS_COMMANDLINE_VERSION ("micronucleus-cli version: 2.5 from " __DATE__)
++#define MICRONUCLEUS_COMMANDLINE_VERSION ("micronucleus-cli version: 2.6")
+ 
+ // Definitions for bootloader_feature_flags below. Must be the same as used in all bootloaderconfig.h files.
+ #define ENTRY_ALWAYS    0

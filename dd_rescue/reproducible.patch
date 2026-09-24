@@ -1,0 +1,11 @@
+--- a/Makefile	2024-11-03 12:24:43.364253186 -0800
++++ b/Makefile	2024-11-03 12:23:56.841008821 -0800
+@@ -539,7 +539,7 @@
+ 	ln -sf libddr_hash.so $(INSTALLLIBDIR)/libddr_MD5.so
+ 	mkdir -p $(MANDIR)/man1
+ 	$(INSTALL) $(INSTASROOT) -m 644 dd_rescue.1 ddr_lzo.1 ddr_crypt.1 ddr_lzma.1 $(MANDIR)/man1/
+-	gzip -9f $(MANDIR)/man1/dd_rescue.1 $(MANDIR)/man1/ddr_lzo.1 $(MANDIR)/man1/ddr_crypt.1 $(MANDIR)/man1/ddr_lzma.1
++	gzip -n -9f $(MANDIR)/man1/dd_rescue.1 $(MANDIR)/man1/ddr_lzo.1 $(MANDIR)/man1/ddr_crypt.1 $(MANDIR)/man1/ddr_lzma.1
+ 
+ check: $(TARGETS) find_nonzero md5 sha1 sha256 sha512 fmt_no
+ 	@echo "make check ... Pass VG=\"valgrind --options\" to use with valgrind"

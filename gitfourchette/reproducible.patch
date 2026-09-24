@@ -1,0 +1,22 @@
+--- a/update_resources.py
++++ b/update_resources.py
+@@ -403,16 +403,16 @@ def formatContributors():
+ 
+ def writeFreezeFile(qtApi: str):
+     repo = pygit2.Repository(SRC_DIR)
+-    headCommit = repo.head.target
++    head = repo.get(repo.head.target)
++    buildDate = datetime.datetime.fromtimestamp(head.commit_time).strftime("%Y-%m-%d %H:%M")
+ 
+-    buildDate = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M")
+     freezeText = textwrap.dedent(f"""\
+         # BEGIN_FREEZE_CONSTS
+         ####################################
+         # Do not commit these changes!
+         ####################################
+ 
+-        APP_FREEZE_COMMIT = "{headCommit}"
++        APP_FREEZE_COMMIT = "{head.id}"
+         APP_FREEZE_DATE = "{buildDate}"
+         APP_FREEZE_QT = "{qtApi.lower()}"
+         # END_FREEZE_CONSTS""")

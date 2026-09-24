@@ -1,0 +1,1875 @@
+From 5b285fcb535bd054737d6daf83e8ff99dcdccf2b Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Mon, 5 Feb 2024 23:55:11 +0100
+Subject: [PATCH 01/25] ci: Switch to GitHub actions
+
+Travis has been long dead.
+
+(cherry picked from commit 9186d3458df28c2f6b6f1d933566cec764a7a6a1)
+---
+ .github/workflows/test.yaml | 69 ++++++++++++++++++++++++++++++++
+ .travis.yml                 | 79 -------------------------------------
+ 2 files changed, 69 insertions(+), 79 deletions(-)
+ create mode 100644 .github/workflows/test.yaml
+ delete mode 100644 .travis.yml
+
+diff --git a/.github/workflows/test.yaml b/.github/workflows/test.yaml
+new file mode 100644
+index 000000000..2abeb3e08
+--- /dev/null
++++ b/.github/workflows/test.yaml
+@@ -0,0 +1,69 @@
++name: Test
++
++on:
++    - push
++    - pull_request
++
++jobs:
++    linux:
++        name: Linux
++        runs-on: ubuntu-22.04
++        steps:
++            - uses: actions/checkout@v4
++            - name: "Install dependencies"
++              run: |
++                sudo apt-get update
++                sudo apt-get install -y \
++                  g++ \
++                  gettext \
++                  intltool \
++                  gir1.2-gtk-3.0 \
++                  libgtk-3-dev \
++                  libjson-c-dev \
++                  liblcms2-dev \
++                  libpng-dev \
++                  python3-dev \
++                  python-gi-dev \
++                  python3-gi-cairo \
++                  python3-nose \
++                  python3-numpy \
++                  python3-setuptools \
++                  swig \
++                  git \
++                  xvfb
++            - name: "Install libmypaint"
++              run: |
++                git clone https://github.com/mypaint/libmypaint
++                pushd libmypaint
++                ./autogen.sh
++                ./configure --prefix=/usr
++                make
++                sudo make install
++                popd
++                sudo rm -fr libmypaint
++            - name: "Install mypaint-brushes"
++              run: |
++                git clone https://github.com/mypaint/mypaint-brushes
++                pushd mypaint-brushes
++                ./autogen.sh
++                ./configure --prefix=/usr
++                make
++                sudo make install
++                popd
++                sudo rm -fr mypaint-brushes
++            - name: "Build mypaint"
++              run: |
++                which python3
++                python3 -m this
++                python3 --version
++                python3 setup.py build_ext
++                python3 setup.py build
++            - name: "Run tests"
++              run: |
++                python3 setup.py nosetests --tests lib
++                python3 setup.py test
++                python3 setup.py clean --all
++                MYPAINT_DEBUG=1 xvfb-run -a python setup.py demo --args='--run-and-quit'
++                sudo python3 setup.py managed_install
++                sudo python3 setup.py managed_uninstall
++                bash appimage/trigger_build.sh
+diff --git a/.travis.yml b/.travis.yml
+deleted file mode 100644
+index c4ad8eaa3..000000000
+--- a/.travis.yml
++++ /dev/null
+@@ -1,79 +0,0 @@
+-language: c++
+-
+-compiler:
+-  - gcc
+-
+-sudo: required
+-
+-dist: xenial
+-
+-services:
+-  - xvfb
+-
+-addons:
+-  apt:
+-    packages:
+-      - g++
+-      - gettext
+-      - intltool
+-      - gir1.2-gtk-3.0
+-      - libgtk-3-dev
+-      - libjson-c-dev
+-      - liblcms2-dev
+-      - libpng12-dev
+-      - python-dev
+-      - python3-dev
+-      - python-gi-dev
+-      - python-gi-cairo
+-      - python3-gi-cairo
+-      - python-nose
+-      - python3-nose
+-      - python-numpy
+-      - python3-numpy
+-      - python-setuptools
+-      - python3-setuptools
+-      - swig
+-      - swig3.0
+-      - git
+-
+-before_script:
+-    - git clone https://github.com/mypaint/libmypaint
+-    - cd libmypaint
+-    - git checkout v1.6.0
+-    - ./autogen.sh
+-    - ./configure --prefix=/usr
+-    - make
+-    - sudo make install
+-    - cd ..
+-    - sudo rm -fr libmypaint
+-
+-    - git clone https://github.com/mypaint/mypaint-brushes
+-    - cd mypaint-brushes
+-    - ./autogen.sh
+-    - ./configure --prefix=/usr
+-    - make
+-    - sudo make install
+-    - cd ..
+-    - sudo rm -fr mypaint-brushes
+-
+-script:
+-    - which python
+-    - python -m this
+-    - python --version
+-    - python setup.py build
+-    - python setup.py build_config --translation-threshold=75
+-    - python setup.py nosetests --tests lib
+-    - python setup.py test
+-    - MYPAINT_DEBUG=1 xvfb-run -a python setup.py demo --args='--run-and-quit'
+-    - sudo python setup.py managed_install
+-    - sudo python setup.py managed_uninstall
+-    - sudo python setup.py install --root=/app/ --prefix=.
+-    - which python3
+-    - python3 -m this
+-    - python3 --version
+-    - python3 setup.py build_ext --swig=/usr/bin/swig3.0
+-    - python3 setup.py build
+-    - python3 setup.py nosetests --tests lib
+-    - python3 setup.py clean --all
+-    - sudo python3 setup.py managed_install
+-    - sudo python3 setup.py managed_uninstall
+
+From 8374dd3a8a0bc7fa2fff2071d7fb6f17b548051c Mon Sep 17 00:00:00 2001
+From: Jesper Lloyd <jpl.lloyd@gmail.com>
+Date: Sun, 16 Aug 2020 22:27:17 +0200
+Subject: [PATCH 02/25] Fix hound config [skip travis] [skip appveyor]
+
+Not sure why the config failed before. Could be that `python`
+instead of `flake8` was the cause, or that having a specific file
+as the last item in the ignore list was the culprit.
+
+(cherry picked from commit 9e81378935c7291c208f3ef78e32c4b644692edd)
+---
+ .hound.yml |  2 +-
+ setup.cfg  | 21 +++++++++++++--------
+ 2 files changed, 14 insertions(+), 9 deletions(-)
+
+diff --git a/.hound.yml b/.hound.yml
+index bd5e1da9d..2dc06f8c6 100644
+--- a/.hound.yml
++++ b/.hound.yml
+@@ -5,6 +5,6 @@
+ 
+ fail_on_violations: true
+ 
+-python:
++flake8:
+   enabled: true
+   config_file: setup.cfg
+diff --git a/setup.cfg b/setup.cfg
+index 5a3a4d6b3..4779b0fdd 100644
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -25,15 +25,20 @@ exclude =
+     .git,
+     __pycache__,
+     docs,
+-    build, dist,
++    build,
++    dist,
+     out,
+-    svg, pixmaps, backgrounds, desktop,
+-    tests, glade,
+-    flatpak, appimage
+-    brushes, palettes,
+-    debian,
+-    po,
+-    lib/mypaintlib.py
++    svg,
++    pixmaps,
++    backgrounds,
++    desktop,
++    tests,
++    glade,
++    flatpak,
++    appimage,
++    palettes,
++    lib/mypaintlib.py,
++    po
+ max-complexity = 20
+ 
+ [pep8]
+
+From 634db3d6da39a502161fcdda9db7edfe7ad591c9 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Wed, 6 Apr 2022 22:55:21 +0200
+Subject: [PATCH 03/25] setup.py:
+
+Setuptools 54.1.0+ complains:
+
+    lib/python3.9/site-packages/setuptools/dist.py:732: UserWarning: Usage of dash-separated 'install-data' will not be supported in future versions. Please use the underscore name 'install_data' instead
+
+https://github.com/pypa/setuptools/commit/a2e9ae4cb75f9b00ddf37713ec307e5f00869737
+(cherry picked from commit 1e97b4e1c0ea785b527ea63bf19f8554f3a25319)
+---
+ setup.cfg | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/setup.cfg b/setup.cfg
+index 4779b0fdd..49965f1f4 100644
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -7,11 +7,11 @@
+ 
+ [install]
+ verbose=1
+-install-scripts=$base/bin
+-install-platlib=$base/lib/mypaint
+-install-purelib=$base/lib/mypaint
+-install-data=$base/share
+-install-headers=$base/include
++install_scripts=$base/bin
++install_platlib=$base/lib/mypaint
++install_purelib=$base/lib/mypaint
++install_data=$base/share
++install_headers=$base/include
+ 
+ [nosetests]
+ with-doctest=1
+
+From beefb444274ead26e617b224566d6a17df3eac51 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Wed, 6 Apr 2022 23:13:06 +0200
+Subject: [PATCH 04/25] setup.py: Ensure setuptools-compatible distutils are
+ used
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Setuptools is warning:
+
+    lib/python3.9/site-packages/_distutils_hack/__init__.py:17: UserWarning: Distutils was imported before Setuptools, but importing Setuptools also replaces the `distutils` module in `sys.modules`. This may lead to undesirable behaviors or errors. To avoid these issues, avoid using distutils directly, ensure that setuptools is installed in the traditional way (e.g. not an editable install), and/or make sure that setuptools is always imported before distutils.
+
+And in fact, I am getting such errors:
+
+    distutils.errors.DistutilsClassError: command class <class '__main__.Build'> must subclass Command
+
+Let’s do as asked.
+
+(cherry picked from commit 423950bec96d6057eac70442de577364d784a847)
+---
+ setup.py | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+diff --git a/setup.py b/setup.py
+index 47b5c2d34..46fa57f71 100644
+--- a/setup.py
++++ b/setup.py
+@@ -14,9 +14,6 @@
+ import tempfile
+ import shutil
+ 
+-from distutils.command.build import build
+-from distutils.command.clean import clean
+-
+ from setuptools import setup
+ from setuptools import Extension
+ from setuptools import Command
+@@ -24,6 +21,11 @@
+ from setuptools.command.install import install
+ from setuptools.command.install_scripts import install_scripts
+ 
++# setuptools must be imported first since they ensure
++# their distutils implementation will be used.
++from distutils.command.build import build
++from distutils.command.clean import clean
++
+ # Constants
+ 
+ 
+
+From db80959c9a90a292c9de105c567e9ca9a9bc3d23 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?=C4=90o=C3=A0n=20Tr=E1=BA=A7n=20C=C3=B4ng=20Danh?=
+ <congdanhqx@gmail.com>
+Date: Wed, 9 Nov 2022 11:24:33 +0700
+Subject: [PATCH 05/25] python: fix for Python 3.11
+
+- python 3 always open in universal mode, U is default mode in 3.0,
+  and removed in 3.11
+- mypaint doesn't use ld?n?gettext, so bind_textdomain_codeset isn't
+  needed, that function is deprecated in 3.8 and is no-ops in 3.10 and
+  removed in 3.11
+
+(cherry picked from commit 032a155b72f2b021f66a994050d83f07342d04af)
+---
+ lib/gettext_setup.py | 25 ++-----------------------
+ setup.py             |  2 +-
+ 2 files changed, 3 insertions(+), 24 deletions(-)
+
+diff --git a/lib/gettext_setup.py b/lib/gettext_setup.py
+index 8a5bef242..7396496f5 100644
+--- a/lib/gettext_setup.py
++++ b/lib/gettext_setup.py
+@@ -72,13 +72,11 @@ def init_gettext(localepath):
+     # yanked in over GI.
+     # https://bugzilla.gnome.org/show_bug.cgi?id=574520#c26
+     bindtextdomain = None
+-    bind_textdomain_codeset = None
+     textdomain = None
+ 
+     # Try the POSIX/Linux way first.
+     try:
+         bindtextdomain = locale.bindtextdomain
+-        bind_textdomain_codeset = locale.bind_textdomain_codeset
+         textdomain = locale.textdomain
+     except AttributeError:
+         logger.warning(
+@@ -107,12 +105,6 @@ def init_gettext(localepath):
+                         ctypes.c_char_p,
+                     )
+                     bindtextdomain.restype = ctypes.c_char_p
+-                    bind_textdomain_codeset = libintl.bind_textdomain_codeset
+-                    bind_textdomain_codeset.argtypes = (
+-                        ctypes.c_char_p,
+-                        ctypes.c_char_p,
+-                    )
+-                    bind_textdomain_codeset.restype = ctypes.c_char_p
+                     textdomain = libintl.textdomain
+                     textdomain.argtypes = (
+                         ctypes.c_char_p,
+@@ -167,35 +159,22 @@ def init_gettext(localepath):
+         # complete set from the same source.
+         # Required for translatable strings in GtkBuilder XML
+         # to be translated.
+-        if bindtextdomain and bind_textdomain_codeset and textdomain:
++        if bindtextdomain and textdomain:
+             assert os.path.exists(path)
+             assert os.path.isdir(path)
+             if sys.platform == 'win32':
+                 p = bindtextdomain(dom.encode('utf-8'), path.encode('utf-8'))
+-                c = bind_textdomain_codeset(
+-                    dom.encode('utf-8'), codeset.encode('utf-8')
+-                )
+             else:
+                 p = bindtextdomain(dom, path)
+-                c = bind_textdomain_codeset(dom, codeset)
+             logger.debug("C bindtextdomain(%r, %r): %r", dom, path, p)
+-            logger.debug(
+-                "C bind_textdomain_codeset(%r, %r): %r",
+-                dom, codeset, c,
+-            )
+         # Call the implementations in Python's standard gettext module
+         # too.  This has proper cross-platform support, but it only
+         # initializes the native Python "gettext" module.
+         # Required for marked strings in Python source to be translated.
+         # See http://docs.python.org/release/2.7/library/locale.html
+         p = gettext.bindtextdomain(dom, path)
+-        c = gettext.bind_textdomain_codeset(dom, codeset)
+         logger.debug("Python bindtextdomain(%r, %r): %r", dom, path, p)
+-        logger.debug(
+-            "Python bind_textdomain_codeset(%r, %r): %r",
+-            dom, codeset, c,
+-        )
+-    if bindtextdomain and bind_textdomain_codeset and textdomain:
++    if bindtextdomain and textdomain:
+         if sys.platform == 'win32':
+             d = textdomain(defaultdom.encode('utf-8'))
+         else:
+diff --git a/setup.py b/setup.py
+index 46fa57f71..8ad31e805 100644
+--- a/setup.py
++++ b/setup.py
+@@ -634,7 +634,7 @@ def _install_script(self, src, header):
+         self.announce("installing %s as %s" % (src, targ_basename), level=2)
+         if self.dry_run:
+             return []
+-        with open(src, "rU") as in_fp:
++        with open(src, "r") as in_fp:
+             with open(targ, "w") as out_fp:
+                 line = in_fp.readline().rstrip()
+                 if line.startswith("#!"):
+
+From c3667e3357a9c098ff3ea943d11820235dc1c45a Mon Sep 17 00:00:00 2001
+From: Jesper Lloyd <jpl.lloyd@gmail.com>
+Date: Fri, 5 Jun 2020 20:32:10 +0200
+Subject: [PATCH 06/25] Py3: Fix drag-n-drop file opening
+
+Another issue caused by assuming that a bytes object
+can be treated as a string, which is not the case in
+Python3.
+
+(cherry picked from commit 66b2ba98bd953afa73d0d6ac71040b14a4ea266b)
+---
+ gui/drawwindow.py | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/gui/drawwindow.py b/gui/drawwindow.py
+index 5eb84ef2f..82c894e40 100644
+--- a/gui/drawwindow.py
++++ b/gui/drawwindow.py
+@@ -287,7 +287,7 @@ def _drag_data_received_cb(self, widget, context, x, y, data, info, time):
+             # Perhaps these should be handled as layers instead now?
+             # Though .ORA files should probably still replace the entire
+             # working file.
+-            uri = rawdata.split("\r\n")[0]
++            uri = lib.glib.filename_to_unicode(rawdata).split("\r\n")[0]
+             file_path, _h = lib.glib.filename_from_uri(uri)
+             if os.path.exists(file_path):
+                 ok_to_open = self.app.filehandler.confirm_destructive_action(
+
+From e5bc42119f8315d99c2d51d7bb7ececeecba8394 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Sat, 3 Feb 2024 13:32:38 +0100
+Subject: [PATCH 07/25] Use standard cursor name
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Adwaita, the resident icon theme on GNOME removed the legacy X11 `circle` cursor:
+https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/commit/fb133a3989ee155c24201e30bab7dbc1c7c843fd
+
+As a result, MyPaint would break when opening a file on GNOME systems.
+
+Let’s use the equivalent `not-allowed` cursor from the XDG cursor-spec draft:
+https://www.freedesktop.org/wiki/Specifications/cursor-spec/
+
+The circle cursor that was removed from Adwaita is in the fourth row, second column here:
+https://gitlab.gnome.org/GNOME/adwaita-icon-theme/-/blob/4d082e44e8361ca32360bb5b865be98a784ef4db/src/cursors/adwaita.svg
+Here is the list of cursor constants supported by GDK 3 with images – it includes legacy X11 cursors:
+https://docs.gtk.org/gdk3/enum.CursorType.html
+Here is the list of cursor names – only contains standard ones:
+https://docs.gtk.org/gdk3/ctor.Cursor.new_from_name.html
+
+Fixes: https://github.com/mypaint/mypaint/issues/1209
+
+(cherry picked from commit 0b720f8867f18acccc8e6ec770a9cc494aa81dcf)
+---
+ gui/tileddrawwidget.py | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/gui/tileddrawwidget.py b/gui/tileddrawwidget.py
+index 59fdfea68..ee5624873 100644
+--- a/gui/tileddrawwidget.py
++++ b/gui/tileddrawwidget.py
+@@ -587,8 +587,7 @@ def update_cursor(self):
+         elif not layer.get_paintable():
+             # Cursor to represent that one cannot draw.
+             # Often a red circle with a diagonal bar through it.
+-            c = Gdk.Cursor.new_for_display(
+-                window.get_display(), Gdk.CursorType.CIRCLE)
++            c = Gdk.Cursor.new_from_name(window.get_display(), "not-allowed")
+         elif app is None:
+             logger.error("update_cursor: no app")
+             return
+
+From 1900df400724e5b3ebc522a086ac6e4674c44e87 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Sat, 3 Feb 2024 16:21:49 +0100
+Subject: [PATCH 08/25] Modernize cursor creation
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- `Gdk.Cursor.new` is deprecated in favour of `new_for_display`
+  but `new_from_name` is actually preferred these days
+  since it uses name from xdg cursor-spec draft:
+  https://docs.gtk.org/gdk3/ctor.Cursor.new.html
+  https://www.freedesktop.org/wiki/Specifications/cursor-spec/
+- `arrow` refers to right-pointing diagonal arrow according to image in
+  https://docs.gtk.org/gdk3/enum.CursorType.html
+  But in Adwaita, as well as our pixmaps, it is just a regular
+  left-pointing arrow so let’s change it to default.
+- In the standard `*_corner`/`*_side` cursors are `resize`,
+  `fleur` is called `move`, and `wait` is `watch`.
+- `plus` and `exchange` no not have standard equivalents.
+
+(cherry picked from commit d7d2496401a112a178d5fa2e491f0cc7537d24cd)
+---
+ gui/buttonmap.py       |  2 +-
+ gui/colors/adjbases.py |  4 ++--
+ gui/colors/hcywheel.py | 15 +++++++--------
+ gui/cursor.py          |  6 ++++--
+ gui/freehand.py        |  3 +--
+ gui/historypopup.py    |  3 +--
+ gui/layermanip.py      |  3 +--
+ gui/widgets.py         |  3 ++-
+ gui/windowing.py       | 21 +++++++++++----------
+ 9 files changed, 30 insertions(+), 30 deletions(-)
+
+diff --git a/gui/buttonmap.py b/gui/buttonmap.py
+index 5af54e66e..4eaad4aca 100644
+--- a/gui/buttonmap.py
++++ b/gui/buttonmap.py
+@@ -561,7 +561,7 @@ def _bp_edit_box_enter_cb(self, evbox, event):
+         window = evbox.get_window()
+         disp = window.get_display()
+         try:  # Wayland themes are a bit incomplete
+-            cursor = Gdk.Cursor.new_for_display(disp, Gdk.CursorType.CROSSHAIR)
++            cursor = Gdk.Cursor.new_from_name(disp, "crosshair")
+             window.set_cursor(cursor)
+         except Exception:
+             logger.exception("Cursor setting failed")  # and otherwise ignore
+diff --git a/gui/colors/adjbases.py b/gui/colors/adjbases.py
+index 1b5b726c1..6c90b48c2 100644
+--- a/gui/colors/adjbases.py
++++ b/gui/colors/adjbases.py
+@@ -112,8 +112,8 @@ def __init__(self, prefs, datapath):
+         self._palette = None  #: Current working palette
+         self._adjusters = weakref.WeakSet()  #: The set of registered adjusters
+         #: Cursor for pickers
+-        # FIXME: Use Gdk.Cursor.new_for_display()
+-        self._picker_cursor = Gdk.Cursor.new(Gdk.CursorType.CROSSHAIR)
++        self._picker_cursor = Gdk.Cursor.new_from_name(
++            Gdk.Display.get_default(), "crosshair")
+         self._datapath = datapath  #: Base path for saving palettes and masks
+         self._hue_distorts = None  #: Hue-remapping table for color wheels
+         self._prefs = prefs  #: Shared preferences dictionary
+diff --git a/gui/colors/hcywheel.py b/gui/colors/hcywheel.py
+index 1aaed1fa5..c2dc45bef 100644
+--- a/gui/colors/hcywheel.py
++++ b/gui/colors/hcywheel.py
+@@ -431,14 +431,13 @@ def __init__(self):
+     def _realize_cb(self, widget):
+         display = self.get_window().get_display()
+ 
+-        self.__add_cursor = Gdk.Cursor.new_for_display(
+-            display, Gdk.CursorType.PLUS)
+-        self.__move_cursor = Gdk.Cursor.new_for_display(
+-            display, Gdk.CursorType.FLEUR)
+-        self.__move_point_cursor = Gdk.Cursor.new_for_display(
+-            display, Gdk.CursorType.CROSSHAIR)
+-        self.__rotate_cursor = Gdk.Cursor.new_for_display(
+-            display, Gdk.CursorType.EXCHANGE)
++        # non-standard cursor
++        self.__add_cursor = Gdk.Cursor.new_from_name(display, "plus")
++        self.__move_cursor = Gdk.Cursor.new_from_name(display, "move")
++        self.__move_point_cursor = Gdk.Cursor.new_from_name(
++            display, "crosshair")
++        # non-standard cursor
++        self.__rotate_cursor = Gdk.Cursor.new_from_name(display, "exchange")
+ 
+     def __leave_cb(self, widget, event):
+         # Reset the active objects when the pointer leaves.
+diff --git a/gui/cursor.py b/gui/cursor.py
+index 990f8be7d..b5e4e7a26 100644
+--- a/gui/cursor.py
++++ b/gui/cursor.py
+@@ -324,10 +324,12 @@ def get_action_cursor(self, action_name, cursor_name=Name.ARROW):
+         # Find a small action icon for the overlay
+         action = self.app.find_action(action_name)
+         if action is None:
+-            return Gdk.Cursor.new(Gdk.CursorType.ARROW)
++            return Gdk.Cursor.new_from_name(
++                Gdk.Display.get_default(), "default")
+         icon_name = action.get_icon_name()
+         if icon_name is None:
+-            return Gdk.Cursor.new(Gdk.CursorType.ARROW)
++            return Gdk.Cursor.new_from_name(
++                Gdk.Display.get_default(), "default")
+         return self.get_icon_cursor(icon_name, cursor_name)
+ 
+     def get_icon_cursor(self, icon_name, cursor_name=Name.ARROW):
+diff --git a/gui/freehand.py b/gui/freehand.py
+index 014cfdcf8..031a3287d 100644
+--- a/gui/freehand.py
++++ b/gui/freehand.py
+@@ -255,8 +255,7 @@ def _hide_drawing_cursor(self, tdw):
+ 
+         if self._cursor_hidden is None:
+             window = tdw.get_window()
+-            cursor = Gdk.Cursor.new_for_display(
+-                window.get_display(), Gdk.CursorType.BLANK_CURSOR)
++            cursor = Gdk.Cursor.new_from_name(window.get_display(), "none")
+             self._cursor_hidden = cursor
+ 
+         tdw.set_override_cursor(self._cursor_hidden)
+diff --git a/gui/historypopup.py b/gui/historypopup.py
+index 1764f61b9..87b3f0533 100644
+--- a/gui/historypopup.py
++++ b/gui/historypopup.py
+@@ -99,8 +99,7 @@ def enter(self):
+         self.show_all()
+ 
+         window = self.get_window()
+-        cursor = Gdk.Cursor.new_for_display(
+-            window.get_display(), Gdk.CursorType.CROSSHAIR)
++        cursor = Gdk.Cursor.new_from_name(window.get_display(), "crosshair")
+         window.set_cursor(cursor)
+ 
+     def leave(self, reason):
+diff --git a/gui/layermanip.py b/gui/layermanip.py
+index 3667d9e9a..3b9453853 100644
+--- a/gui/layermanip.py
++++ b/gui/layermanip.py
+@@ -164,8 +164,7 @@ def drag_stop_cb(self, tdw):
+             tdw.set_sensitive(False)
+ 
+             window = tdw.get_window()
+-            cursor = Gdk.Cursor.new_for_display(
+-                window.get_display(), Gdk.CursorType.WATCH)
++            cursor = Gdk.Cursor.new_from_name(window.get_display(), "wait")
+             tdw.set_override_cursor(cursor)
+ 
+             self.final_modifiers = self.current_modifiers()
+diff --git a/gui/widgets.py b/gui/widgets.py
+index 77b98f93b..a3c7ae8de 100644
+--- a/gui/widgets.py
++++ b/gui/widgets.py
+@@ -170,7 +170,8 @@ def with_wait_cursor(func):
+     """python decorator that adds a wait cursor around a function"""
+     @functools.wraps(func)
+     def wrapper(self, *args, **kwargs):
+-        wait_cursor = Gdk.Cursor.new(Gdk.CursorType.WATCH)
++        wait_cursor = Gdk.Cursor.new_from_name(
++            Gdk.Display.get_default(), "wait")
+         toplevels = Gtk.Window.list_toplevels()
+         toplevels = [t for t in toplevels if t.get_window() is not None]
+         for toplevel in toplevels:
+diff --git a/gui/windowing.py b/gui/windowing.py
+index 0c6977b98..41dc7a04a 100644
+--- a/gui/windowing.py
++++ b/gui/windowing.py
+@@ -146,14 +146,14 @@ class ChooserPopup (Gtk.Window):
+     EDGE_SIZE = 12
+     EDGE_CURSORS = {
+         None: None,
+-        Gdk.WindowEdge.NORTH_EAST: Gdk.CursorType.TOP_RIGHT_CORNER,
+-        Gdk.WindowEdge.NORTH_WEST: Gdk.CursorType.TOP_LEFT_CORNER,
+-        Gdk.WindowEdge.SOUTH_EAST: Gdk.CursorType.BOTTOM_RIGHT_CORNER,
+-        Gdk.WindowEdge.SOUTH_WEST: Gdk.CursorType.BOTTOM_LEFT_CORNER,
+-        Gdk.WindowEdge.WEST: Gdk.CursorType.LEFT_SIDE,
+-        Gdk.WindowEdge.EAST: Gdk.CursorType.RIGHT_SIDE,
+-        Gdk.WindowEdge.SOUTH: Gdk.CursorType.BOTTOM_SIDE,
+-        Gdk.WindowEdge.NORTH: Gdk.CursorType.TOP_SIDE,
++        Gdk.WindowEdge.NORTH_EAST: "ne-resize",
++        Gdk.WindowEdge.NORTH_WEST: "nw-resize",
++        Gdk.WindowEdge.SOUTH_EAST: "se-resize",
++        Gdk.WindowEdge.SOUTH_WEST: "sw-resize",
++        Gdk.WindowEdge.WEST: "w-resize",
++        Gdk.WindowEdge.EAST: "e-resize",
++        Gdk.WindowEdge.SOUTH: "s-resize",
++        Gdk.WindowEdge.NORTH: "n-resize",
+     }
+ 
+     ## Method defs
+@@ -181,7 +181,8 @@ def __init__(self, app, actions, config_name):
+         self._prefs_size_key = "%s.window_size" % (config_name,)
+         self._resize_info = None   # state during an edge resize
+         self._outside_grab_active = False
+-        self._outside_cursor = Gdk.Cursor(Gdk.CursorType.LEFT_PTR)
++        self._outside_cursor = Gdk.Cursor.new_from_name(
++            self.get_display(), "default")
+         self._popup_info = None
+ 
+         # Initial positioning
+@@ -192,7 +193,7 @@ def __init__(self, app, actions, config_name):
+         self._edge_cursors = {}
+         for edge, cursor in self.EDGE_CURSORS.items():
+             if cursor is not None:
+-                cursor = Gdk.Cursor(cursor)
++                cursor = Gdk.Cursor.new_from_name(self.get_display(), cursor)
+             self._edge_cursors[edge] = cursor
+ 
+         # Default size
+
+From ebcf17a1d880884d2f045616ecdff86cff3be261 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Sat, 3 Feb 2024 20:17:37 +0100
+Subject: [PATCH 09/25] Catch error for non-standard cursor
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Adwaita icon theme does not contain `exchange` legacy X11 cursor
+so attempting to mask HCY wheel on GNOME will cause a crash:
+
+    Gdk-Message: Unable to load exchange from the cursor theme
+    TypeError: constructor returned NULL
+
+Let’s catch the error like in https://github.com/mypaint/mypaint/commit/cf14342d9ad609ffd92eef965450281f8ddb3fc1
+and fall back to default cursor when not present.
+
+(cherry picked from commit 5496b1cd1113fcd46230d87760b7e6b51cc747bc)
+---
+ gui/colors/hcywheel.py | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/gui/colors/hcywheel.py b/gui/colors/hcywheel.py
+index c2dc45bef..81aed207e 100644
+--- a/gui/colors/hcywheel.py
++++ b/gui/colors/hcywheel.py
+@@ -431,13 +431,20 @@ def __init__(self):
+     def _realize_cb(self, widget):
+         display = self.get_window().get_display()
+ 
+-        # non-standard cursor
+-        self.__add_cursor = Gdk.Cursor.new_from_name(display, "plus")
++        try:
++            # non-standard cursor
++            self.__add_cursor = Gdk.Cursor.new_from_name(display, "plus")
++        except Exception:
++            self.__add_cursor = Gdk.Cursor.new_from_name(display, "default")
+         self.__move_cursor = Gdk.Cursor.new_from_name(display, "move")
+         self.__move_point_cursor = Gdk.Cursor.new_from_name(
+             display, "crosshair")
+-        # non-standard cursor
+-        self.__rotate_cursor = Gdk.Cursor.new_from_name(display, "exchange")
++        try:
++            # non-standard cursor
++            self.__rotate_cursor = Gdk.Cursor.new_from_name(
++                display, "exchange")
++        except Exception:
++            self.__rotate_cursor = Gdk.Cursor.new_from_name(display, "grab")
+ 
+     def __leave_cb(self, widget, event):
+         # Reset the active objects when the pointer leaves.
+
+From 1b5fa7ab6f13858d5747ca6eee6b4e8a6de265d1 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Sun, 4 Aug 2024 05:41:28 +0200
+Subject: [PATCH 10/25] strokemap: Replace deprecated tostring with tobytes
+
+https: //numpy.org/devdocs/reference/generated/numpy.ndarray.tostring.html#numpy.ndarray.tostring
+
+(cherry picked from commit 2a92b6baf452aba2cff3cc0a7782b301da3933d7)
+---
+ lib/strokemap.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/strokemap.py b/lib/strokemap.py
+index 204c1da72..fe3f85d72 100644
+--- a/lib/strokemap.py
++++ b/lib/strokemap.py
+@@ -411,7 +411,7 @@ class _Tile:
+ 
+     """
+ 
+-    _ZDATA_ONES = zlib.compress(np.ones((N, N), 'uint8').tostring())
++    _ZDATA_ONES = zlib.compress(np.ones((N, N), 'uint8').tobytes())
+ 
+     def __init__(self):
+         """Initialize, as a tile filled with all ones."""
+@@ -451,7 +451,7 @@ def new_from_array(cls, array):
+             tile._zdata = None
+         else:
+             tile._all = False
+-            tile._zdata = zlib.compress(array.tostring())
++            tile._zdata = zlib.compress(array.tobytes())
+         return tile
+ 
+     @classmethod
+
+From cbc3a41c4d4333a3cd4930dc833385febc0ccfab Mon Sep 17 00:00:00 2001
+From: askmeaboutlo0m <askmeaboutlo0m@users.noreply.github.com>
+Date: Mon, 23 Jun 2025 15:51:28 +0200
+Subject: [PATCH 11/25] Replace tostring() with tobytes() in stroke.py (#1300)
+
+Because numpy removed the former function (in a minor release) with
+numpy/numpy#28254. The function was an alias, so there's no change in
+behavior, i.e. it always returned bytes.
+
+See also 2a92b6baf452aba2cff3cc0a7782b301da3933d7, where the same
+function was already replaced in strokemap.py.
+
+(cherry picked from commit ab017e073e83a4930a0fb09608682bf4b7ab1874)
+---
+ lib/stroke.py | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/stroke.py b/lib/stroke.py
+index 22991bc4a..7c41e8481 100644
+--- a/lib/stroke.py
++++ b/lib/stroke.py
+@@ -43,7 +43,7 @@ def start_recording(self, brush):
+ 
+         states = brush.get_states_as_array()
+         assert states.dtype == 'float32'
+-        self.brush_state = states.tostring()
++        self.brush_state = states.tobytes()
+ 
+         self.brush = brush
+         self.brush.new_stroke()  # resets the stroke_* members of the brush
+@@ -63,7 +63,7 @@ def stop_recording(self):
+         # - for space: just gzip? use integer datatypes?
+         # - for time: maybe already use array storage while recording?
+         data = np.array(self.tmp_event_list, dtype='float64')
+-        data = data.tostring()
++        data = data.tobytes()
+         version = b'2'
+         self.stroke_data = version + data
+ 
+
+From 62a7aabe37f8620fdfd9451fdc9d1f299d734b44 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Mon, 21 Jul 2025 22:58:08 +0200
+Subject: [PATCH 12/25] ci: Fetch libmypaint 1.x
+
+MyPaint 2.0 requires `libmypaint >= 1.6` not `libmypaint-2.0`.
+---
+ .github/workflows/test.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/.github/workflows/test.yaml b/.github/workflows/test.yaml
+index 2abeb3e08..2563c45f5 100644
+--- a/.github/workflows/test.yaml
++++ b/.github/workflows/test.yaml
+@@ -33,7 +33,7 @@ jobs:
+                   xvfb
+             - name: "Install libmypaint"
+               run: |
+-                git clone https://github.com/mypaint/libmypaint
++                git clone https://github.com/mypaint/libmypaint --branch libmypaint-v1
+                 pushd libmypaint
+                 ./autogen.sh
+                 ./configure --prefix=/usr
+
+From fee06eeed69f7bb54d4df3ff1b4374273716bcc5 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Sun, 4 Aug 2024 05:41:55 +0200
+Subject: [PATCH 13/25] Avoid distutils
+
+They were removed in Python 3.12
+
+https://peps.python.org/pep-0632/#migration-advice
+
+(cherry picked from commit 6aa6082510ef1791ed9993fe6bd36c20fd11fad4)
+---
+ tests/unported/performance.py | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/tests/unported/performance.py b/tests/unported/performance.py
+index ebb10cc83..8b626abaa 100755
+--- a/tests/unported/performance.py
++++ b/tests/unported/performance.py
+@@ -6,7 +6,7 @@
+ import subprocess
+ import cProfile
+ from time import time, sleep
+-import distutils.spawn
++import shutil
+ 
+ import numpy as np
+ 
+@@ -447,10 +447,10 @@ def memory_after_startup(gui):
+ 
+     if options.show_profile:
+         gprof2dot = "gprof2dot.py" \
+-            if distutils.spawn.find_executable("gprof2dot.py") \
++            if shutil.which("gprof2dot.py") \
+             else "gprof2dot"
+         viewer = "feh" \
+-            if distutils.spawn.find_executable("feh") \
++            if shutil.which("feh") \
+             else "eog"
+         # FIXME: use gui.profiling's improved code somehow
+         os.system(
+
+From f5bca64bf2f03c0bf2b5b31188ed979376574c74 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Sun, 4 Aug 2024 02:57:39 +0200
+Subject: [PATCH 14/25] Adjust flake8 rules
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Hound enables flake8-black [out of the box](https://www.github.com/houndci/hound/issues/1769).
+When we change certain files, it will whine that “Black would make changes”.
+But if we run black locally, Hound will spit out flake8’s complaints about the changes black made.
+
+As per the [black recommendations](https://black.readthedocs.io/en/stable/guides/using_black_with_other_tools.html#flake8),
+we now exclude these three rules:
+
+- E203: Whitespace before ':' (https://www.flake8rules.com/rules/E203.html)
+- E501: Line too long (82 > 79 characters) (https://www.flake8rules.com/rules/E501.html)
+- E701: Multiple statements on one line (colon) (https://www.flake8rules.com/rules/E701.html)
+
+and add a flake8-bugbear which is already enabled on hound (https://www.github.com/houndci/hound/issues/1707).
+Specifically, we enable the following rule:
+
+- B950: Line too long https://github.com/PyCQA/flake8-bugbear#:~:text=b950%3A%20line%20too%20long%2E
+
+(cherry picked from commit 3cade4759c28f4c8ac934acec74e512fab7e3fbf)
+---
+ setup.cfg | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/setup.cfg b/setup.cfg
+index 49965f1f4..2ccc25a70 100644
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -20,7 +20,9 @@ verbosity=2
+ # Syntax checking:
+ 
+ [flake8]
+-ignore = E266,W503,E251,E226,BLK100
++max-line-length = 80
++extend-select = B950
++ignore = E203,E266,E501,E701,W503,E251,E226,BLK100
+ exclude =
+     .git,
+     __pycache__,
+
+From f01c6aaa31f00d0d69ec08718476606db9d4073f Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Sun, 4 Aug 2024 03:38:59 +0200
+Subject: [PATCH 15/25] Fix Hound complaints
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- Loop control variable '…' not used within the loop body. If this is intended, start the name with an underscore.
+- Do not use mutable data structures for argument defaults. They are created during function definition time. All calls to the function reuse this one instance of that data structure, persisting changes between them.
+
+(cherry picked from commit 92dfc9a04a866ceaea69b106f162a68c376da476)
+---
+ gui/brusheditor.py        |  2 +-
+ gui/colors/paletteview.py | 39 ++++++++++++++++++++++++++-------------
+ gui/filehandling.py       |  2 +-
+ 3 files changed, 28 insertions(+), 15 deletions(-)
+
+diff --git a/gui/brusheditor.py b/gui/brusheditor.py
+index 2a38f90c7..b800c1cf6 100644
+--- a/gui/brusheditor.py
++++ b/gui/brusheditor.py
+@@ -479,7 +479,7 @@ def _populate_settings_treestore(self):
+             group_iter = store.append(root_iter, row_data)
+             group_path = store.get_path(group_iter)
+             self._group_treepath[group_id] = group_path
+-            for i, cname in enumerate(group['settings']):
++            for cname in group["settings"]:
+                 self._setting_group[cname] = group_id
+                 s = brushsettings.settings_dict[cname]
+                 row_data = [cname, s.name, True, Pango.Weight.NORMAL]
+diff --git a/gui/colors/paletteview.py b/gui/colors/paletteview.py
+index b1efbd9f9..dc3209498 100644
+--- a/gui/colors/paletteview.py
++++ b/gui/colors/paletteview.py
+@@ -378,7 +378,7 @@ def _load_btn_clicked(self, button):
+             title=C_("palette load dialog: title", "Load palette"),
+             parent=self,
+             preview=preview,
+-            shortcuts=[palettes_dir],
++            shortcuts=(palettes_dir,),
+         )
+         if palette is not None:
+             self._mgr.palette.update(palette)
+@@ -1007,17 +1007,31 @@ def _paint_palette_layout(self, cr):
+             return
+         bg_col = _widget_get_bg_color(self)
+         dx, dy = self.get_painting_offset()
+-        _palette_render(mgr.palette, cr,
+-                        rows=self._rows, columns=self._columns,
+-                        swatch_size=self._swatch_size,
+-                        bg_color=bg_col,
+-                        offset_x=dx, offset_y=dy,
+-                        rtl=False)
++        _palette_render(
++            mgr.palette,
++            cr,
++            rows=self._rows,
++            columns=self._columns,
++            swatch_size=self._swatch_size,
++            bg_color=bg_col,
++            offset_x=dx,
++            offset_y=dy,
++            rtl=False,
++        )
+ 
+-    def _paint_marker(self, cr, x, y, insert=False,
+-                      bg_rgb=(0, 0, 0), fg_rgb=(1, 1, 1),
+-                      bg_dash=[1, 2], fg_dash=[1, 2],
+-                      bg_width=2, fg_width=1):
++    def _paint_marker(
++        self,
++        cr,
++        x,
++        y,
++        insert=False,
++        bg_rgb=(0, 0, 0),
++        fg_rgb=(1, 1, 1),
++        bg_dash=(1, 2),
++        fg_dash=(1, 2),
++        bg_width=2,
++        fg_width=1,
++    ):
+         cr.save()
+         cr.set_line_join(cairo.LINE_JOIN_ROUND)
+         cr.set_line_cap(cairo.LINE_CAP_ROUND)
+@@ -1062,8 +1076,7 @@ def paint_foreground_cb(self, cr, wd, ht):
+             if i is not None:
+                 x, y = self.get_position_for_index(i)
+                 marker_args = [cr, x, y]
+-                marker_kw = dict(bg_width=3, fg_width=1,
+-                                 bg_dash=[2, 3], fg_dash=[2, 3])
++                marker_kw = dict(bg_width=3, fg_width=1, bg_dash=(2, 3), fg_dash=(2, 3))
+                 if not mgr.palette.match_is_approx:
+                     marker_kw.update(dict(bg_width=4, fg_width=1))
+                 self._paint_marker(*marker_args, **marker_kw)
+diff --git a/gui/filehandling.py b/gui/filehandling.py
+index 9eecb2d15..83f6d7941 100644
+--- a/gui/filehandling.py
++++ b/gui/filehandling.py
+@@ -607,7 +607,7 @@ def init_save_dialog(self, export):
+         ))
+         label.set_alignment(0.0, 0.5)
+         combo = Gtk.ComboBoxText()
+-        for (name, ext, opt) in self.saveformats.values():
++        for name, _ext, _opt in self.saveformats.values():
+             combo.append_text(name)
+         combo.set_active(0)
+         combo.connect('changed', self.selected_save_format_changed_cb)
+
+From dd0cd87dc1bfcf03cb310fd20dd2a4b784673cd0 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Sat, 3 Aug 2024 23:53:23 +0200
+Subject: [PATCH 16/25] Fix exporting brushes with mtime 0
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+On NixOS, exporting a brush group by pressing “Export as Zipped Brushset” action in its properties fails with:
+
+    ValueError: ZIP does not support timestamps before 1980
+
+The `gui.brushmanager.BrushManager.export_group` doctest fails with the same error.
+
+This is because Nix forces `mtime` of package files to 0 (1970-01-01) to ensure the build outputs are consistently reproducible.
+
+Let’s disable strict timestamps to clamp the out-of-range timestamps to ZIP epoch.
+That argument was actually introduced in Python 3.8 because of reproducible builds:
+https://bugs.python.org/issue34097
+
+This raises minimum version of Python to 3.8.
+
+(cherry picked from commit 7fd915700dc8740e30cd649fc9b1b6aa4c221688)
+---
+ BUILDING.md         | 2 +-
+ gui/brushmanager.py | 6 +++++-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/BUILDING.md b/BUILDING.md
+index 3f0278104..5f06b616a 100644
+--- a/BUILDING.md
++++ b/BUILDING.md
+@@ -80,7 +80,7 @@ installed before you can build it.
+ - setuptools
+ - pygobject
+ - gtk3 (>= 3.12)
+-- python (>= 2.7.4)
++- python (>= 3.8)
+ - swig (>= 3)
+ - numpy
+ - librsvg2 (and its svg gdk-pixbuf loader)
+diff --git a/gui/brushmanager.py b/gui/brushmanager.py
+index cb8584a0f..f3362f435 100644
+--- a/gui/brushmanager.py
++++ b/gui/brushmanager.py
+@@ -843,7 +843,11 @@ def export_group(self, group, filename):
+         """
+         brushes = self.get_group_brushes(group)
+         order_conf = b'Group: %s\n' % utf8(group)
+-        with zipfile.ZipFile(filename, mode='w') as zf:
++        with zipfile.ZipFile(
++            filename,
++            mode='w',
++            strict_timestamps=False,
++        ) as zf:
+             for brush in brushes:
+                 prefix = brush._get_fileprefix()
+                 zf.write(prefix + u'.myb', brush.name + u'.myb')
+
+From 8ebfaf6de916e9734d79a86dd598ed1c57dcc77d Mon Sep 17 00:00:00 2001
+From: Aesara Binder <aesara@mailbox.org>
+Date: Thu, 10 Jul 2025 08:57:01 +0930
+Subject: [PATCH 17/25] Fix pyobject enums in pygobject >= 3.51.0 (#1304)
+
+Unregistered pygobject enums in v3.51.0 released on 2025-02-01 are now
+stdlib enums.
+
+From the NEWS file:
+> Note: Only enumerations and flags that have a GType associated will
+> have the GEnum extra properties, such as
+> `value_nicks` and `value_names`.
+
+Further down:
+> * Use standard `enum` module for enums and flags in
+> PyGObject :mr:`394`
+
+Reference:
+https://gitlab.gnome.org/GNOME/pygobject/-/blob/1c675e47a160662e5247a387dcd35e0d36b3c4d2/NEWS#L32
+https://gitlab.gnome.org/GNOME/pygobject/-/merge_requests/394
+
+Closes #1292
+
+Co-authored-by: N.F. <nfontenot27@gmail.com>
+Signed-off-by: Aesara Binder <aesara@mailbox.org>
+(cherry picked from commit 7e4ec24506aa465c4eb176f1dcc9b70c1a45c1e2)
+---
+ gui/device.py          | 5 +++--
+ gui/inputtestwindow.py | 2 +-
+ lib/glib.py            | 2 +-
+ 3 files changed, 5 insertions(+), 4 deletions(-)
+
+diff --git a/gui/device.py b/gui/device.py
+index 97b0fe15c..45fb3a27c 100644
+--- a/gui/device.py
++++ b/gui/device.py
+@@ -277,7 +277,7 @@ def _init_device_settings(self, device):
+                 "New device %r"
+                 " (%s, axes:%d, class=%s, vendor=%r, product=%r)",
+                 device.get_name(),
+-                source.value_name,
++                source.name,
+                 num_axes,
+                 device.__class__.__name__,
+                 vendor_id,
+@@ -354,7 +354,8 @@ def device_used(self, device):
+ 
+         logger.debug(
+             "Device change: name=%r source=%s",
+-            new_device.name, new_device.source.value_name,
++            new_device.name,
++            new_device.source.name,
+         )
+ 
+         # When editing brush settings, it is often more convenient to use the
+diff --git a/gui/inputtestwindow.py b/gui/inputtestwindow.py
+index 41bbd1720..92eab59e4 100644
+--- a/gui/inputtestwindow.py
++++ b/gui/inputtestwindow.py
+@@ -118,7 +118,7 @@ def event2str(self, widget, event):
+         t = str(getattr(event, 'time', '-'))
+         msg = '% 6s % 15s' % (
+             t[-6:],
+-            event.type.value_name.replace('GDK_', ''),
++            event.type.name.replace("GDK_", ""),
+         )
+ 
+         if hasattr(event, 'x') and hasattr(event, 'y'):
+diff --git a/lib/glib.py b/lib/glib.py
+index ef5d75b88..6df25a930 100644
+--- a/lib/glib.py
++++ b/lib/glib.py
+@@ -190,7 +190,7 @@ def init_user_dir_caches():
+         k = GLib.UserDirectory(i)
+         logger.debug(
+             "Init g_get_user_special_dir(%s): %r",
+-            k.value_name,
++            k.name,
+             get_user_special_dir(k),
+         )
+ 
+
+From 7edb3f2078a936cfbb18713e988593b27350248f Mon Sep 17 00:00:00 2001
+From: Aesara Binder <aesara@mailbox.org>
+Date: Mon, 17 Feb 2025 16:25:31 +1030
+Subject: [PATCH 18/25] github-ci: Update test.yaml Debian version
+
+Signed-off-by: Aesara Binder <aesara@mailbox.org>
+(cherry picked from commit 8bc896d0778ad368cf2f79072d0e13ad4473f874)
+---
+ .github/workflows/test.yaml | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/.github/workflows/test.yaml b/.github/workflows/test.yaml
+index 2563c45f5..27a164f5a 100644
+--- a/.github/workflows/test.yaml
++++ b/.github/workflows/test.yaml
+@@ -7,7 +7,7 @@ on:
+ jobs:
+     linux:
+         name: Linux
+-        runs-on: ubuntu-22.04
++        runs-on: ubuntu-24.04
+         steps:
+             - uses: actions/checkout@v4
+             - name: "Install dependencies"
+
+From cdc2ce874dc4719a969a31b9a54eb8773895ce5a Mon Sep 17 00:00:00 2001
+From: Albert Westra <contact@odysseywestra.com>
+Date: Mon, 12 Jan 2026 18:04:57 -0800
+Subject: [PATCH 19/25] CI: Add librsvg2-common dependency for SVG thumbnails
+ in tests
+
+This adds nessesary dependency for SVG pixbuf loader on Ubuntu
+Github Action runner so tests that load SVGs succeed.
+
+(cherry picked from commit 466d5f43d8b2a7da8c41c1c0fd22c1880500962b)
+---
+ .github/workflows/test.yaml | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/.github/workflows/test.yaml b/.github/workflows/test.yaml
+index 27a164f5a..0f020bdc0 100644
+--- a/.github/workflows/test.yaml
++++ b/.github/workflows/test.yaml
+@@ -22,6 +22,7 @@ jobs:
+                   libjson-c-dev \
+                   liblcms2-dev \
+                   libpng-dev \
++                  librsvg2-common \
+                   python3-dev \
+                   python-gi-dev \
+                   python3-gi-cairo \
+
+From 521b5455cd10a570cdb95d40ba3858ac46f9194d Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Tue, 13 Jan 2026 23:47:25 +0100
+Subject: [PATCH 20/25] Fix pyobject enums in pygobject < 3.51.0
+
+Wraps changes from 7e4ec24506aa465c4eb176f1dcc9b70c1a45c1e2 in try block, falling back to the old one.
+Using explicit block so that it can be easily dropped in the future.
+
+(cherry picked from commit 1a7c622d7268412d23130906b6ed86523f91bd38)
+---
+ gui/device.py          | 17 +++++++++++++++--
+ gui/inputtestwindow.py | 11 ++++++++---
+ lib/glib.py            |  9 ++++++++-
+ 3 files changed, 31 insertions(+), 6 deletions(-)
+
+diff --git a/gui/device.py b/gui/device.py
+index 45fb3a27c..15a32e2e1 100644
+--- a/gui/device.py
++++ b/gui/device.py
+@@ -266,6 +266,13 @@ def _init_device_settings(self, device):
+             return
+         settings = self._device_settings.get(device)
+         if not settings:
++
++            try:
++                source_kind = source.name
++            except AttributeError:
++                # Compatibility with PyGObject < 3.51
++                source_kind = source.value_name
++
+             try:
+                 vendor_id = device.get_vendor_id()
+                 product_id = device.get_product_id()
+@@ -277,7 +284,7 @@ def _init_device_settings(self, device):
+                 "New device %r"
+                 " (%s, axes:%d, class=%s, vendor=%r, product=%r)",
+                 device.get_name(),
+-                source.name,
++                source_kind,
+                 num_axes,
+                 device.__class__.__name__,
+                 vendor_id,
+@@ -352,10 +359,16 @@ def device_used(self, device):
+         new_device.name = new_device.props.name
+         new_device.source = new_device.props.input_source
+ 
++        try:
++            source_kind = new_device.source.name
++        except AttributeError:
++            # Compatibility with PyGObject < 3.51
++            source_kind = new_device.source.value_name
++
+         logger.debug(
+             "Device change: name=%r source=%s",
+             new_device.name,
+-            new_device.source.name,
++            source_kind,
+         )
+ 
+         # When editing brush settings, it is often more convenient to use the
+diff --git a/gui/inputtestwindow.py b/gui/inputtestwindow.py
+index 92eab59e4..ce13491c3 100644
+--- a/gui/inputtestwindow.py
++++ b/gui/inputtestwindow.py
+@@ -115,10 +115,15 @@ def second_timer_cb(self):
+         return True
+ 
+     def event2str(self, widget, event):
+-        t = str(getattr(event, 'time', '-'))
+-        msg = '% 6s % 15s' % (
++        t = str(getattr(event, "time", "-"))
++        try:
++            event_name = event.type.name
++        except AttributeError:
++            # Compatibility with PyGObject < 3.51
++            event_name = event.type.value_name
++        msg = "% 6s % 15s" % (
+             t[-6:],
+-            event.type.name.replace("GDK_", ""),
++            event_name.replace("GDK_", ""),
+         )
+ 
+         if hasattr(event, 'x') and hasattr(event, 'y'):
+diff --git a/lib/glib.py b/lib/glib.py
+index 6df25a930..73df0b22e 100644
+--- a/lib/glib.py
++++ b/lib/glib.py
+@@ -188,9 +188,16 @@ def init_user_dir_caches():
+     # It doesn't matter if some of these are None
+     for i in range(GLib.UserDirectory.N_DIRECTORIES):
+         k = GLib.UserDirectory(i)
++
++        try:
++            dir_kind = k.name
++        except AttributeError:
++            # Compatibility with PyGObject < 3.51
++            dir_kind = k.value_name
++
+         logger.debug(
+             "Init g_get_user_special_dir(%s): %r",
+-            k.name,
++            dir_kind,
+             get_user_special_dir(k),
+         )
+ 
+
+From a6563f923dfe5548b8af89111cf0cfde4e4cf0c2 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Wed, 14 Jan 2026 03:01:28 +0100
+Subject: [PATCH 21/25] Fix SyntaxWarning: invalid escape sequence '\*'
+
+These made doctests slighly more noisy.
+
+Fixes: https://github.com/mypaint/mypaint/issues/1312
+(cherry picked from commit 4bccdd4b199f69db47cde672818b4eb45cd965c6)
+---
+ gui/filehandling.py |  4 ++--
+ gui/mode.py         |  6 +++---
+ gui/stategroup.py   |  2 +-
+ lib/autosave.py     |  2 +-
+ lib/document.py     |  6 +++---
+ lib/observable.py   |  2 +-
+ lib/pixbuf.py       |  2 +-
+ lib/surface.py      | 14 +++++++-------
+ lib/tiledsurface.py |  2 +-
+ 9 files changed, 20 insertions(+), 20 deletions(-)
+
+diff --git a/gui/filehandling.py b/gui/filehandling.py
+index 83f6d7941..81eacdaf1 100644
+--- a/gui/filehandling.py
++++ b/gui/filehandling.py
+@@ -285,8 +285,8 @@ def call(self, func, *args, **kwargs):
+         """Call a save or load callable and watch its progress.
+ 
+         :param callable func: The IO function to be called.
+-        :param \*args: Passed to func.
+-        :param \*\*kwargs: Passed to func.
++        :param *args: Passed to func.
++        :param **kwargs: Passed to func.
+         :returns: The return value of func.
+ 
+         Messages about the operation in progress may be shown to the
+diff --git a/gui/mode.py b/gui/mode.py
+index ddc46f6f9..57f493bed 100644
+--- a/gui/mode.py
++++ b/gui/mode.py
+@@ -664,7 +664,7 @@ class BrushworkModeMixin (InteractionMode):
+     def __init__(self, **kwds):
+         """Cooperative init (this mixin initializes some private fields)
+ 
+-        :param bool \*\*kwds: Passed through to other __init__s.
++        :param bool **kwds: Passed through to other __init__s.
+ 
+         """
+         super(BrushworkModeMixin, self).__init__(**kwds)
+@@ -1233,7 +1233,7 @@ def __init__(self, unmodified_persist=True, temporary_activation=True,
+                  **kwargs):
+         """
+         :param bool unmodified_persist: Stay active if entered without modkeys
+-        :param bool \*\*kwargs: Passed through to other __init__s.
++        :param bool **kwargs: Passed through to other __init__s.
+ 
+         If unmodified_persist is true, and drag mode is spring-loaded, the
+         tool will stay active if no modifiers were held initially. This means
+@@ -1305,7 +1305,7 @@ def _sync_pending_changes_cb(self, model, **kwargs):
+         """Syncs pending changes with the model
+ 
+         :param Document model: the requesting model
+-        :param \*\*kwargs: passed through to checkpoint()
++        :param **kwargs: passed through to checkpoint()
+ 
+         This issues a `checkpoint()` on the current InteractionMode.
+         """
+diff --git a/gui/stategroup.py b/gui/stategroup.py
+index bbc6393c1..d360bcf05 100644
+--- a/gui/stategroup.py
++++ b/gui/stategroup.py
+@@ -134,7 +134,7 @@ def activate(self, action_or_event=None, **kwargs):
+         """Activate a State from an action or a button press event.
+ 
+         :param action_or_event: A Gtk.Action, or a Gdk.Event.
+-        :param \*\*kwargs: passed to enter().
++        :param **kwargs: passed to enter().
+ 
+         For events, only button press events are supported by this code.
+ 
+diff --git a/lib/autosave.py b/lib/autosave.py
+index 717bc5e7d..04a70f0ed 100644
+--- a/lib/autosave.py
++++ b/lib/autosave.py
+@@ -75,7 +75,7 @@ def queue_autosave(self, oradir, taskproc, manifest, bbox, **kwargs):
+         :param lib.idletask.Processor taskproc: Output: queue of tasks
+         :param set manifest: Output: files in data/ to retain afterward
+         :param tuple bbox: frame bounding box, (x,y,w,h)
+-        :param \*\*kwargs: To be passed to underlying save routines.
++        :param **kwargs: To be passed to underlying save routines.
+         :rtype: xml.etree.ElementTree.Element
+         :returns: Element indexing files when written (for stack.xml)
+ 
+diff --git a/lib/document.py b/lib/document.py
+index cce4c7eb9..85d45c68b 100644
+--- a/lib/document.py
++++ b/lib/document.py
+@@ -1123,7 +1123,7 @@ def sync_pending_changes(self, flush=True, **kwargs):
+         By default, the request to flush changes is non-optional.
+ 
+         :param bool flush: if this is False, the flush is optional too
+-        :param \*\*kwargs: passed through to observers
++        :param **kwargs: passed through to observers
+ 
+         See: `lib.observable.event` for details of the signalling
+         mechanism.
+@@ -1937,7 +1937,7 @@ def _load_from_openraster_dir(self, oradir, cache_dir,
+         :param progress: Unsized progress object: updates UI.
+         :type progress: lib.feedback.Progress or None
+         :param bool retain_autosave_info: Restore unsaved time etc.
+-        :param \*\*kwargs: Passed through to layer loader methods.
++        :param **kwargs: Passed through to layer loader methods.
+ 
+         The oradir folder is treated as read-only during this operation.
+ 
+@@ -2026,7 +2026,7 @@ def _save_layers_to_new_orazip(root_stack, filename, bbox=None,
+     :param frame_active: True if the frame is enabled
+     :param progress: Unsized UI feedback object
+     :type progress: lib.feedback.Progress or None
+-    :param \*\*kwargs: Passed through to root_stack.save_to_openraster()
++    :param **kwargs: Passed through to root_stack.save_to_openraster()
+     :rtype: GdkPixbuf
+     :returns: Thumbnail preview image (256x256 max) of what was saved
+ 
+diff --git a/lib/observable.py b/lib/observable.py
+index 4d851aa0c..1ddf6774c 100644
+--- a/lib/observable.py
++++ b/lib/observable.py
+@@ -656,7 +656,7 @@ def sync_pending_changes(self, flush=True, **kwargs):
+         default, the request to flush changes is non-optional.
+ 
+         :param bool flush: if this is False, the flush is optional too
+-        :param \*\*kwargs: passed through to observers
++        :param **kwargs: passed through to observers
+ 
+         See: `lib.observable.event` for details of the signalling
+         mechanism.
+diff --git a/lib/pixbuf.py b/lib/pixbuf.py
+index dd07c3464..6a5b38661 100644
+--- a/lib/pixbuf.py
++++ b/lib/pixbuf.py
+@@ -48,7 +48,7 @@ def save(pixbuf, filename, type='png', **kwargs):
+     :param GdkPixbuf.Pixbuf pixbuf: the pixbuf to save
+     :param unicode filename: file path to save as
+     :param str type: type to save as: 'jpeg'/'png'/...
+-    :param \*\*kwargs: passed through to GdkPixbuf
++    :param **kwargs: passed through to GdkPixbuf
+     :rtype: bool
+     :returns: whether the file was saved fully
+ 
+diff --git a/lib/surface.py b/lib/surface.py
+index e5c05b738..9e127b3fe 100644
+--- a/lib/surface.py
++++ b/lib/surface.py
+@@ -87,8 +87,8 @@ def blit_tile_into(self, dst, dst_has_alpha, tx, ty, *args, **kwargs):
+         :param bool dst_has_alpha: destination has an alpha channel
+         :param int tx: Tile X coord (multiply by TILE_SIZE for pixels)
+         :param int ty: Tile Y coord (multiply by TILE_SIZE for pixels)
+-        :param \*args: Implementation may extend this interface
+-        :param \*\*kwargs: Implementation may extend this interface
++        :param *args: Implementation may extend this interface
++        :param **kwargs: Implementation may extend this interface
+ 
+         The destination is typically of dimensions NxNx4, and is
+         typically of type uint16 or uint8. Implementations are expected
+@@ -121,8 +121,8 @@ def composite_tile(self, dst, dst_has_alpha, tx, ty, mipmap_level=0,
+         :param int tx: Tile X coord (multiply by TILE_SIZE for pixels)
+         :param int ty: Tile Y coord (multiply by TILE_SIZE for pixels)
+         :param int mode: mode to use when compositing
+-        :param \*args: Implementation may extend this interface
+-        :param \*\*kwargs: Implementation may extend this interface
++        :param *args: Implementation may extend this interface
++        :param **kwargs: Implementation may extend this interface
+ 
+         Composite one tile of this surface over the array dst, modifying
+         only dst. Unlike `blit_tile_into()`, this method must respect
+@@ -163,7 +163,7 @@ def scanline_strips_iter(surface, rect, alpha=False,
+     :param TileBlittable surface: Surface to iterate over
+     :param bool alpha: If true, write a PNG with alpha
+     :param bool single_tile_pattern: True if surface is a one tile only.
+-    :param tuple \*\*kwargs: Passed to blit_tile_into.
++    :param tuple **kwargs: Passed to blit_tile_into.
+ 
+     The `alpha` parameter is passed to the surface's `blit_tile_into()`.
+     Rendering is skipped for all but the first line of single-tile patterns.
+@@ -225,13 +225,13 @@ def save_as_png(surface, filename, *rect, **kwargs):
+ 
+     :param TileBlittable surface: Surface to save
+     :param unicode filename: The file to write
+-    :param tuple \*rect: Rectangle (x, y, w, h) to save
++    :param tuple *rect: Rectangle (x, y, w, h) to save
+     :param bool alpha: If true, write a PNG with alpha
+     :param progress: Updates a UI every scanline strip.
+     :type progress: lib.feedback.Progress or None
+     :param bool single_tile_pattern: True if surface is one tile only.
+     :param bool save_srgb_chunks: Set to False to not save sRGB flags.
+-    :param tuple \*\*kwargs: Passed to blit_tile_into (minus the above)
++    :param tuple **kwargs: Passed to blit_tile_into (minus the above)
+ 
+     The `alpha` parameter is passed to the surface's `blit_tile_into()`
+     method, as well as to the PNG writer.  Rendering is
+diff --git a/lib/tiledsurface.py b/lib/tiledsurface.py
+index 5c3104743..11892842f 100644
+--- a/lib/tiledsurface.py
++++ b/lib/tiledsurface.py
+@@ -526,7 +526,7 @@ def load_from_png(self, filename, x, y, progress=None,
+         :param bool convert_to_srgb: If True, convert to sRGB
+         :param progress: Unsized UI feedback obj.
+         :type progress: lib.feedback.Progress or None
+-        :param dict \*\*kwargs: Ignored
++        :param dict **kwargs: Ignored
+ 
+         Raises a `lib.errors.FileHandlingError` with a descriptive
+         string when conversion or PNG reading fails.
+
+From 868a95fdd5812999ec2a756a5e0f84cd3380c78d Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Wed, 14 Jan 2026 01:53:29 +0100
+Subject: [PATCH 22/25] tests: Rename in preparation for pytest
+
+pytest requires modules containing tests to start with `test_` prefix.
+
+https://docs.pytest.org/en/7.1.x/explanation/goodpractices.html#conventions-for-python-test-discovery
+https://docs.pytest.org/en/7.1.x/how-to/unittest.html
+(cherry picked from commit 4900b6838209181f006d4b887bd991704768cade)
+---
+ tests/{compositeops.py => test_compositeops.py} | 0
+ tests/{fill.py => test_fill.py}                 | 0
+ tests/{localedata.py => test_localedata.py}     | 0
+ tests/{mypaintlib.py => test_mypaintlib.py}     | 0
+ tests/{rendering.py => test_rendering.py}       | 0
+ 5 files changed, 0 insertions(+), 0 deletions(-)
+ rename tests/{compositeops.py => test_compositeops.py} (100%)
+ rename tests/{fill.py => test_fill.py} (100%)
+ rename tests/{localedata.py => test_localedata.py} (100%)
+ rename tests/{mypaintlib.py => test_mypaintlib.py} (100%)
+ rename tests/{rendering.py => test_rendering.py} (100%)
+
+diff --git a/tests/compositeops.py b/tests/test_compositeops.py
+similarity index 100%
+rename from tests/compositeops.py
+rename to tests/test_compositeops.py
+diff --git a/tests/fill.py b/tests/test_fill.py
+similarity index 100%
+rename from tests/fill.py
+rename to tests/test_fill.py
+diff --git a/tests/localedata.py b/tests/test_localedata.py
+similarity index 100%
+rename from tests/localedata.py
+rename to tests/test_localedata.py
+diff --git a/tests/mypaintlib.py b/tests/test_mypaintlib.py
+similarity index 100%
+rename from tests/mypaintlib.py
+rename to tests/test_mypaintlib.py
+diff --git a/tests/rendering.py b/tests/test_rendering.py
+similarity index 100%
+rename from tests/rendering.py
+rename to tests/test_rendering.py
+
+From 79e9fe68a679a341a93109974d214331f04253f7 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Wed, 14 Jan 2026 02:28:34 +0100
+Subject: [PATCH 23/25] tests: remove useless sys.path modification
+
+The tests work just fine even without this.
+
+(cherry picked from commit 27f5c477250cc257f0ea9d4885f1b68e449512ce)
+---
+ tests/paths.py | 4 ----
+ 1 file changed, 4 deletions(-)
+
+diff --git a/tests/paths.py b/tests/paths.py
+index 162e64323..32b7ab25b 100644
+--- a/tests/paths.py
++++ b/tests/paths.py
+@@ -1,7 +1,3 @@
+ import os
+-import sys
+ 
+ TESTS_DIR = os.path.abspath(os.path.dirname(__file__))
+-TOP_DIR = os.path.dirname(TESTS_DIR)
+-
+-sys.path.insert(0, TOP_DIR)
+
+From 221faff5692684051b1930085d4d04267d86ef75 Mon Sep 17 00:00:00 2001
+From: Jan Tojnar <jtojnar@gmail.com>
+Date: Wed, 14 Jan 2026 01:41:50 +0100
+Subject: [PATCH 24/25] Replace nose with pytest
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+1. nose testing library has been dead for a while
+https://nose.readthedocs.io/en/latest/#note-to-users
+and distros have been removing downstream packages
+https://fedoraproject.org/wiki/Changes/DeprecateNose
+
+Let’s switch to pytest, which is the most popular these days.
+
+2. Furthermore `setup.py test` subcommand has been removed in setuptools 72.0.0:
+https://www.github.com/pypa/setuptools/issues/931
+and it is not recommended by pytest:
+https://docs.pytest.org/en/7.1.x/explanation/goodpractices.html#do-not-run-via-setuptools
+
+Let’s call pytest directly.
+
+3. `test_suite` field in `setup.py` was meant to preclude the following tests from running
+
+    brushiconeditor (unittest.loader._FailedTest.brushiconeditor) ... ERROR
+    drawwindow (unittest.loader._FailedTest.drawwindow) ... ERROR
+
+but using the equivalent `pytest.testpaths` option is not necessary since pytest requires
+files to be named according to convention, which those gui modules do not follow.
+
+4. `setup.py test` called `build_ext --inplace`, we need to enable it ourselves.
+In-place builds are ugly but `build` command already adds stuff into the source tree
+so this should be fine until we switch to Meson.
+
+5. Some tests print performance metrics to `stderr` so we will use `pytest -rP`
+to also print captured stderr for passed tests. In the future, we will replace
+that with user properties:
+https://docs.pytest.org/en/stable/reference/reference.html#record-property
+
+(cherry picked from commit 3bce10c2afc1010760b4cf844f029ed7cb4b96a8)
+---
+ .github/workflows/test.yaml   | 6 +++---
+ BUILDING.md                   | 6 +++---
+ setup.cfg                     | 4 ----
+ setup.py                      | 4 +++-
+ windows/install-msys2-deps.sh | 6 +++---
+ windows/msys2-build.sh        | 6 +++---
+ 6 files changed, 15 insertions(+), 17 deletions(-)
+
+diff --git a/.github/workflows/test.yaml b/.github/workflows/test.yaml
+index 0f020bdc0..3588fb998 100644
+--- a/.github/workflows/test.yaml
++++ b/.github/workflows/test.yaml
+@@ -26,7 +26,7 @@ jobs:
+                   python3-dev \
+                   python-gi-dev \
+                   python3-gi-cairo \
+-                  python3-nose \
++                  python3-pytest \
+                   python3-numpy \
+                   python3-setuptools \
+                   swig \
+@@ -61,8 +61,8 @@ jobs:
+                 python3 setup.py build
+             - name: "Run tests"
+               run: |
+-                python3 setup.py nosetests --tests lib
+-                python3 setup.py test
++                pytest --doctest-modules lib
++                pytest -rP
+                 python3 setup.py clean --all
+                 MYPAINT_DEBUG=1 xvfb-run -a python setup.py demo --args='--run-and-quit'
+                 sudo python3 setup.py managed_install
+diff --git a/BUILDING.md b/BUILDING.md
+index 5f06b616a..083ae8168 100644
+--- a/BUILDING.md
++++ b/BUILDING.md
+@@ -233,13 +233,13 @@ between runs when you do this.
+ 
+ Please run the doctests before committing new code.
+ 
+-    sudo apt-get install python-nose
+-    python setup.py nosetests
++    sudo apt-get install python3-pytest
++    pytest --doctest-modules lib
+ 
+ We have some heavier conformance tests for the C++ parts too. These take
+ longer to run.
+ 
+-    python setup.py test
++    pytest -rP
+ 
+ You should write doctests for important new Python code. Please consider
+ writing tests in the `tests` folder too, if you make any changes to the
+diff --git a/setup.cfg b/setup.cfg
+index 2ccc25a70..f3b97a7f1 100644
+--- a/setup.cfg
++++ b/setup.cfg
+@@ -13,10 +13,6 @@ install_purelib=$base/lib/mypaint
+ install_data=$base/share
+ install_headers=$base/include
+ 
+-[nosetests]
+-with-doctest=1
+-verbosity=2
+-
+ # Syntax checking:
+ 
+ [flake8]
+diff --git a/setup.py b/setup.py
+index 8ad31e805..ea6a01e31 100644
+--- a/setup.py
++++ b/setup.py
+@@ -442,6 +442,9 @@ def initialize_options(self):
+         self.disable_openmp = False
+         build_ext.initialize_options(self)
+ 
++        # Required for tests to find .so without installation.
++        self.inplace = True
++
+     def finalize_options(self):
+         build_ext.finalize_options(self)
+         if self.set_rpath and (sys.platform.startswith("linux")
+@@ -1008,6 +1011,5 @@ def get_data_files():
+         "mypaint.py",
+         "desktop/mypaint-ora-thumbnailer.py",
+     ],
+-    test_suite='tests',
+     ext_modules=get_ext_modules(),
+ )
+diff --git a/windows/install-msys2-deps.sh b/windows/install-msys2-deps.sh
+index 60b0a02e5..68d6d521f 100644
+--- a/windows/install-msys2-deps.sh
++++ b/windows/install-msys2-deps.sh
+@@ -38,9 +38,9 @@ Dependencies installed for MSYSTEM=$MSYSTEM.
+ You should now be able to run the following commands to build and
+ test MyPaint from within this folder.
+ 
+-    python setup.py build
+-    python setup.py nosetests
+-    python setup.py test
++    python setup.py build --inplace
++    pytest --doctest-modules lib
++    pytest -rP
+     python setup.py clean --all
+ 
+     python setup.py demo
+diff --git a/windows/msys2-build.sh b/windows/msys2-build.sh
+index 6df7584a1..9d2f22aef 100755
+--- a/windows/msys2-build.sh
++++ b/windows/msys2-build.sh
+@@ -88,7 +88,7 @@ install_dependencies() {
+         ${PKG_PREFIX}-hicolor-icon-theme \
+         ${PKG_PREFIX}-librsvg \
+         ${PKG_PREFIX}-gobject-introspection \
+-        ${PKG_PREFIX}-python3-nose \
++        ${PKG_PREFIX}-python3-pytest \
+         ${PKG_PREFIX}-python3-setuptools \
+         ${PKG_PREFIX}-swig \
+         ${PKG_PREFIX}-gsettings-desktop-schemas \
+@@ -295,7 +295,7 @@ install_test(){
+ 
+ run_doctest() {
+     loginfo "Running unit tests."
+-    python3 setup.py nosetests --tests lib
++    pytest --doctest-modules lib
+     logok "Unit tests done."
+ }
+ 
+@@ -303,7 +303,7 @@ run_tests() {
+     loginfo "Runnning startup/shutdown test"
+     MYPAINT_DEBUG=1 python setup.py demo --args='--run-and-quit'
+     loginfo "Running conformance tests."
+-    python3 setup.py test
++    pytest -rP
+     logok "Tests done."
+ }
+ 
+
+From 558c538b5390d7a15c7f98b491d8971529872eba Mon Sep 17 00:00:00 2001
+From: Aesara Binder <aesara@mailbox.org>
+Date: Tue, 21 Jan 2025 08:33:29 +1030
+Subject: [PATCH 25/25] gui/main.py: Rm GdkPixbuf utf8 workaround (WinNT)
+
+Removes a workaround (4d1ed4e) that replaces the default new_from_file,
+new_from_file_at_scale, and new_from_file_at_size functions with their
+respective utf8 functions (identified with the "_utf8" suffix)
+
+It's been 10 years and the workaround is no longer required -- the
+commit that fixes this is 8 years old.
+https://gitlab.gnome.org/GNOME/gdk-pixbuf/-/commit/85b4f6c291c5b928b4b60a31dfac83ec2927f345
+
+Closes #1274
+
+Signed-off-by: Aesara Binder <aesara@mailbox.org>
+(cherry picked from commit 979257395cf5320321e12805f7625b3975823241)
+---
+ gui/main.py | 16 ----------------
+ 1 file changed, 16 deletions(-)
+
+diff --git a/gui/main.py b/gui/main.py
+index d12e17f3e..88b1be466 100644
+--- a/gui/main.py
++++ b/gui/main.py
+@@ -18,7 +18,6 @@
+ import logging
+ import warnings
+ 
+-from lib.gibindings import GdkPixbuf
+ from optparse import OptionParser
+ 
+ import lib.config
+@@ -34,23 +33,8 @@
+ 
+ def _init_gtk_workarounds():
+     """Initialize some workarounds for unoptimal GTK behavior"""
+-    # Via https://code.google.com/p/quodlibet/source/browse/quodlibet/
+     logger.debug("Adding GTK workarounds...")
+ 
+-    # On windows the default variants only do ANSI paths, so replace them.
+-    # In some typelibs they are replaced by default, in some don't..
+-    if os.name == "nt":
+-        for name in ["new_from_file_at_scale", "new_from_file_at_size",
+-                     "new_from_file"]:
+-            cls = GdkPixbuf.Pixbuf
+-            func = getattr(cls, name + "_utf8", None)
+-            if func:
+-                logger.debug(
+-                    "Monkeypatching GdkPixbuf.Pixbuf.%s with %r",
+-                    name, func,
+-                )
+-                setattr(cls, name, func)
+-
+     # Wayland "workaround" to avoid input freeze on pointer grabs.
+     # Respect existing envvars for testing (and general courtesy).
+     # This relies on XWayland being available.

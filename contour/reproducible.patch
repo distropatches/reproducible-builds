@@ -1,0 +1,71 @@
+From 0793b4315004dbd71da90e215ae7bfd7b4b38a56 Mon Sep 17 00:00:00 2001
+From: Christian Parpart <christian@parpart.family>
+Date: Tue, 17 Feb 2026 00:31:17 +0100
+Subject: [PATCH] Upgrade libunicode from feature branch to v0.8.0 release
+
+Move from the development branch (feature/casing_and_normalization)
+to the official v0.8.0 release tag for reproducible builds.
+
+Adapt to API renames: grapheme_segmenter::breakable() is now
+is_breakable(), and general_category:: free functions gained
+the is_ prefix (e.g. space_separator -> is_space_separator).
+
+Signed-off-by: Christian Parpart <christian@parpart.family>
+---
+ cmake/ContourThirdParties.cmake |  4 ++--
+ scripts/install-deps.ps1        |  9 ++++-----
+ scripts/install-deps.sh         |  9 ++++-----
+ src/vtbackend/Line.cpp          |  2 +-
+ src/vtbackend/Screen.cpp        |  2 +-
+ src/vtbackend/ViCommands.cpp    | 12 ++++++------
+ 6 files changed, 18 insertions(+), 20 deletions(-)
+
+diff --git a/src/vtbackend/Line.cpp b/src/vtbackend/Line.cpp
+index e40a930fbf..45ea0c5341 100644
+--- a/src/vtbackend/Line.cpp
++++ b/src/vtbackend/Line.cpp
+@@ -174,7 +174,7 @@ InflatedLineBuffer<Cell> inflate(TrivialLineBuffer const& input)
+         auto const nextChar =
+             holds_alternative<unicode::Success>(r) ? get<unicode::Success>(r).value : ReplacementCharacter;
+ 
+-        if (unicode::grapheme_segmenter::breakable(lastChar, nextChar))
++        if (unicode::grapheme_segmenter::is_breakable(lastChar, nextChar))
+         {
+             while (gapPending > 0)
+             {
+diff --git a/src/vtbackend/Screen.cpp b/src/vtbackend/Screen.cpp
+index bf0d38be33..4c878e4f62 100644
+--- a/src/vtbackend/Screen.cpp
++++ b/src/vtbackend/Screen.cpp
+@@ -588,7 +588,7 @@ void Screen<Cell>::writeTextInternal(char32_t sourceCodepoint)
+ 
+     char32_t const codepoint = _cursor.charsets.map(sourceCodepoint);
+ 
+-    if (unicode::grapheme_segmenter::breakable(_terminal->parser().precedingGraphicCharacter(), codepoint))
++    if (unicode::grapheme_segmenter::is_breakable(_terminal->parser().precedingGraphicCharacter(), codepoint))
+     {
+         writeCharToCurrentAndAdvance(codepoint);
+     }
+diff --git a/src/vtbackend/ViCommands.cpp b/src/vtbackend/ViCommands.cpp
+index 37a3395bc4..14059a1ab4 100644
+--- a/src/vtbackend/ViCommands.cpp
++++ b/src/vtbackend/ViCommands.cpp
+@@ -34,12 +34,12 @@ namespace
+         //
+         // TODO: The punctuation test is highly inefficient. Adapt libunicode to allow O(1) access to these.
+         return (codepoint > 255
+-                && !(unicode::general_category::space_separator(codepoint)
+-                     || unicode::general_category::initial_punctuation(codepoint)
+-                     || unicode::general_category::final_punctuation(codepoint)
+-                     || unicode::general_category::open_punctuation(codepoint)
+-                     || unicode::general_category::close_punctuation(codepoint)
+-                     || unicode::general_category::dash_punctuation(codepoint)))
++                && !(unicode::general_category::is_space_separator(codepoint)
++                     || unicode::general_category::is_initial_punctuation(codepoint)
++                     || unicode::general_category::is_final_punctuation(codepoint)
++                     || unicode::general_category::is_open_punctuation(codepoint)
++                     || unicode::general_category::is_close_punctuation(codepoint)
++                     || unicode::general_category::is_dash_punctuation(codepoint)))
+                || (192 <= codepoint && codepoint <= 255);
+     }
+ 

@@ -1,0 +1,11 @@
+--- a/Makefile
++++ b/Makefile
+@@ -167,7 +167,7 @@
+ 	install -d -m 755 $(DOCDIR) $(MANDIR)
+ 	install -m 644 doc/ferm.txt doc/ferm.html $(DOCDIR)
+ 	install -m 644 doc/ferm.1 doc/import-ferm.1 $(MANDIR)
+-	gzip -f9 $(MANDIR)/ferm.1 $(MANDIR)/import-ferm.1
++	gzip -nf9 $(MANDIR)/ferm.1 $(MANDIR)/import-ferm.1
+ 
+ uninstall:
+ 	rm -rf $(DOCDIR)
