@@ -1,0 +1,199 @@
+From 58819f79f91c4286871c208bfa63bba4e7798d2a Mon Sep 17 00:00:00 2001
+From: Robin Candau <robincandau@protonmail.com>
+Date: Sun, 2 Aug 2026 23:01:45 +0200
+Subject: [PATCH] Don't compress man page in install script
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Man pages compression is a distribution and/or user preference that should be left to the downstream packaging.
+
+Compressing man pages by default imposes a compression algorithm and level while most distributions package managers handle that already (including eventual downstream preferences / expectations or policies) and also eventually allow users customization on that front.
+
+Additionally, it can lead to unexpected side effects. For instance, `gzip` is recording timestamps in metadata by default, which prevents [reproducible builds](https://reproducible-builds.org/):
+
+```
+--- /tmp/rebuilderdaPlbrq/inputs/bashburn-4.0.0-1-any.pkg.tar.zst
++++ /tmp/rebuilderdaPlbrq/out/bashburn-4.0.0-1-any.pkg.tar.zst
+├── bashburn-4.0.0-1-any.pkg.tar
+│ ├── file list
+│ │ @@ -1,9 +1,9 @@
+│ │  -rw-r--r--   0 root         (0) root         (0)     6908 2026-04-19 10:36:41.000000 .BUILDINFO
+│ │ --rw-r--r--   0 root         (0) root         (0)     3913 2026-04-19 10:36:41.000000 .MTREE
+│ │ +-rw-r--r--   0 root         (0) root         (0)     3912 2026-04-19 10:36:41.000000 .MTREE
+│ │  -rw-r--r--   0 root         (0) root         (0)      689 2026-04-19 10:36:41.000000 .PKGINFO
+│ │  drwxr-xr-x   0 root         (0) root         (0)        0 2026-04-19 10:36:41.000000 usr/
+│ │  drwxr-xr-x   0 root         (0) root         (0)        0 2026-04-19 10:36:41.000000 usr/bin/
+│ │  -rwxr-xr-x   0 root         (0) root         (0)    13087 2026-04-19 10:36:41.000000 usr/bin/bashburn
+│ │  drwxr-xr-x   0 root         (0) root         (0)        0 2026-04-19 10:36:41.000000 usr/lib/
+│ │  drwxr-xr-x   0 root         (0) root         (0)        0 2026-04-19 10:36:41.000000 usr/lib/Bashburn/
+│ │  -rwxr-xr-x   0 root         (0) root         (0)    13115 2026-04-19 10:36:41.000000 usr/lib/Bashburn/BashBurn.sh
+│ ├── .MTREE
+│ │ ├── .MTREE-content
+│ │ │ @@ -86,8 +86,8 @@
+│ │ │  ./usr/lib/Bashburn/misc/commonfunctions.sh time=1776595001.0 size=2332 sha256digest=aac8b5abd7fad4863ec0c314aafd5ed4233ab0483f420a4cf9dcd2b951d47022
+│ │ │  ./usr/lib/Bashburn/misc/configure_temp_help.lang time=1776595001.0 mode=644 size=7540 sha256digest=2e4470153ad2589592192a2b4a0cbca7a509cf026bed512f6903e1371fb259ae
+│ │ │  ./usr/lib/Bashburn/misc/loopback.sh time=1776595001.0 size=2847 sha256digest=de1d4a699bddf2a5bc43b9090a8c09e2c0f304d907cb96ff44dc944f174424f4
+│ │ │  ./usr/lib/Bashburn/misc/m3u_read.sh time=1776595001.0 size=294 sha256digest=e93a45ef2c7fa9f053da36707819e4c88a8d2d2d38b9ae3bc09c0351e2f0841e
+│ │ │  ./usr/share time=1776595001.0 type=dir
+│ │ │  ./usr/share/man time=1776595001.0 type=dir
+│ │ │  ./usr/share/man/man1 time=1776595001.0 type=dir
+│ │ │ -./usr/share/man/man1/bashburn.1.gz time=1776595001.0 mode=644 size=5496 sha256digest=126a46f8eef6382961011e2d0d963a65e1f831df229c1be327a945451f88e2c3
+│ │ │ +./usr/share/man/man1/bashburn.1.gz time=1776595001.0 mode=644 size=5496 sha256digest=87873487fed4304de8d56ea0de1d33a34cd5d20f969d6b01f112815ce13d0da6
+│ ├── usr/share/man/man1/bashburn.1.gz
+│ │ ├── filetype from file(1)
+│ │ │ @@ -1 +1 @@
+│ │ │ -gzip compressed data, last modified: Sun Apr 19 10:36:51 2026, from Unix
+│ │ │ +gzip compressed data, last modified: Wed Jul 29 09:06:38 2026, from Unix
+```
+
+See https://cmpct.info/~sam/blog/posts/automatic-manpage-compression/ for detailed rational.
+---
+ code/Install.sh                   | 4 ++--
+ code/rpm/bashburn.spec            | 2 +-
+ playground/filemanager/Install.sh | 4 ++--
+ releases/3.0-beta1/Install.sh     | 4 ++--
+ releases/3.0.1/Install.sh         | 4 ++--
+ releases/3.0.1/rpm/bashburn.spec  | 2 +-
+ releases/3.0/Install.sh           | 4 ++--
+ 7 files changed, 12 insertions(+), 12 deletions(-)
+
+diff --git a/code/Install.sh b/code/Install.sh
+index 62d6da5..f2892dd 100755
+--- a/code/Install.sh
++++ b/code/Install.sh
+@@ -231,7 +231,7 @@ install_files()
+     # After installing, See what tickles are needed.
+     make -C bashburn_man
+     mkdir -p $prefix/share/man/man1
+-    gzip < bashburn_man/bashburn.1 > $prefix/share/man/man1/bashburn.1.gz
++    cp bashburn_man/bashburn.1 $prefix/share/man/man1/bashburn.1
+     if (( ! maketar ))
+     then
+ 	cd $bblib
+@@ -264,7 +264,7 @@ to delete these files:
+ uninstall_files()
+ {
+     printf "\nRemoving %bBashBurn%b from your system..." "$blue" "$coloff"
+-    rm -rf $bin/bashburn $bblib $prefix/share/man/man1/bashburn.1.gz
++    rm -rf $bin/bashburn $bblib $prefix/share/man/man1/bashburn.1
+     echo -e "${green}[DONE]${coloff}\n\n"
+ }
+ 
+diff --git a/code/rpm/bashburn.spec b/code/rpm/bashburn.spec
+index 9c82112..8983dee 100644
+--- a/code/rpm/bashburn.spec
++++ b/code/rpm/bashburn.spec
+@@ -219,7 +219,7 @@ rm -rf %buildroot
+ %{bblib}/misc/loopback.sh
+ %{bblib}/misc/m3u_read.sh
+ %doc
+-/usr/share/man/man1/bashburn.1.gz
++/usr/share/man/man1/bashburn.1
+ 
+ %post
+ 	sed -e "s^@@BBROOTDIR@@^%{bblib}^" %{bblib}/BashBurn.sh > newbb-$$.sh
+diff --git a/playground/filemanager/Install.sh b/playground/filemanager/Install.sh
+index c8659ad..17022cf 100755
+--- a/playground/filemanager/Install.sh
++++ b/playground/filemanager/Install.sh
+@@ -219,7 +219,7 @@ install_files()
+     done
+     # After installing, See what tickles are needed.
+     make -C bashburn_man
+-    gzip < bashburn_man/bashburn.1 > $prefix/share/man/man1/bashburn.1.gz
++    cp bashburn_man/bashburn.1 $prefix/share/man/man1/bashburn.1
+     cd $bblib
+     sed -e "s%@@BBROOTDIR@@%$bblib%" BashBurn.sh > newbb-$$.sh
+     mv newbb-$$.sh BashBurn.sh
+@@ -249,7 +249,7 @@ to delete these files:
+ uninstall_files()
+ {
+     printf "\nRemoving %bBashBurn%b from your system..." "$blue" "$coloff"
+-    rm -rf $bin/bashburn $bblib $prefix/share/man/man1/bashburn.1.gz
++    rm -rf $bin/bashburn $bblib $prefix/share/man/man1/bashburn.1
+     echo -e "${green}[DONE]${coloff}\n\n"
+ }
+ 
+diff --git a/releases/3.0-beta1/Install.sh b/releases/3.0-beta1/Install.sh
+index f3c764c..518ab0a 100644
+--- a/releases/3.0-beta1/Install.sh
++++ b/releases/3.0-beta1/Install.sh
+@@ -212,7 +212,7 @@ install_files()
+ 	cp $ii $bblib/$ii || die "Failed to copy $ii"
+     done
+     # After installing, See what tickles are needed.
+-    gzip < docs/bashburn.1 > $prefix/share/man/man1/bashburn.1.gz
++    cp bashburn_man/bashburn.1 $prefix/share/man/man1/bashburn.1
+     cd $bblib
+     sed -e "s%@@BBROOTDIR@@%$bblib%" BashBurn.sh > newbb-$$.sh
+     mv newbb-$$.sh BashBurn.sh
+@@ -242,7 +242,7 @@ to delete these files:
+ uninstall_files()
+ {
+     printf "\nRemoving %bBashBurn%b from your system..." "$blue" "$coloff"
+-    rm -rf $bin/bashburn $bblib $prefix/share/man/man1/bashburn.1.gz
++    rm -rf $bin/bashburn $bblib $prefix/share/man/man1/bashburn.1
+     echo -e "${green}[DONE]${coloff}\n\n"
+ }
+ 
+diff --git a/releases/3.0.1/Install.sh b/releases/3.0.1/Install.sh
+index 6a7f4b7..ca44186 100644
+--- a/releases/3.0.1/Install.sh
++++ b/releases/3.0.1/Install.sh
+@@ -228,7 +228,7 @@ install_files()
+     # After installing, See what tickles are needed.
+     make -C bashburn_man
+     mkdir -p $prefix/share/man/man1
+-    gzip < bashburn_man/bashburn.1 > $prefix/share/man/man1/bashburn.1.gz
++    cp bashburn_man/bashburn.1 $prefix/share/man/man1/bashburn.1
+     if (( ! maketar ))
+     then
+ 	cd $bblib
+@@ -261,7 +261,7 @@ to delete these files:
+ uninstall_files()
+ {
+     printf "\nRemoving %bBashBurn%b from your system..." "$blue" "$coloff"
+-    rm -rf $bin/bashburn $bblib $prefix/share/man/man1/bashburn.1.gz
++    rm -rf $bin/bashburn $bblib $prefix/share/man/man1/bashburn.1
+     echo -e "${green}[DONE]${coloff}\n\n"
+ }
+ 
+diff --git a/releases/3.0.1/rpm/bashburn.spec b/releases/3.0.1/rpm/bashburn.spec
+index 1054a30..53a8720 100644
+--- a/releases/3.0.1/rpm/bashburn.spec
++++ b/releases/3.0.1/rpm/bashburn.spec
+@@ -221,7 +221,7 @@ rm -rf $RPM_BUILD_ROOT
+ %{bblib}/misc/loopback.sh
+ %{bblib}/misc/m3u_read.sh
+ %doc
+-/usr/share/man/man1/bashburn.1.gz
++/usr/share/man/man1/bashburn.1
+ 
+ %post
+ 	sed -e "s^@@BBROOTDIR@@^%{bblib}^" %{bblib}/BashBurn.sh > newbb-$$.sh
+diff --git a/releases/3.0/Install.sh b/releases/3.0/Install.sh
+index be469b4..b8d3211 100644
+--- a/releases/3.0/Install.sh
++++ b/releases/3.0/Install.sh
+@@ -213,7 +213,7 @@ install_files()
+     done
+     # After installing, See what tickles are needed.
+     make -C bashburn_man
+-    gzip < bashburn_man/bashburn.1 > $prefix/share/man/man1/bashburn.1.gz
++    cp bashburn_man/bashburn.1 $prefix/share/man/man1/bashburn.1
+     cd $bblib
+     sed -e "s%@@BBROOTDIR@@%$bblib%" BashBurn.sh > newbb-$$.sh
+     mv newbb-$$.sh BashBurn.sh
+@@ -243,7 +243,7 @@ to delete these files:
+ uninstall_files()
+ {
+     printf "\nRemoving %bBashBurn%b from your system..." "$blue" "$coloff"
+-    rm -rf $bin/bashburn $bblib $prefix/share/man/man1/bashburn.1.gz
++    rm -rf $bin/bashburn $bblib $prefix/share/man/man1/bashburn.1
+     echo -e "${green}[DONE]${coloff}\n\n"
+ }
+ 
+-- 
+2.55.0
+

@@ -1,0 +1,115 @@
+From afbe1e19c9d8926925579a0472fecb97a97cdb36 Mon Sep 17 00:00:00 2001
+From: Robin Candau <robincandau@protonmail.com>
+Date: Mon, 3 Aug 2026 00:11:38 +0200
+Subject: [PATCH] Don't compress man page in during build
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Man pages compression is a distribution and/or user preference that should be left to the downstream packaging.
+
+Compressing man pages by default imposes a compression algorithm and level while most distributions package managers handle that already (including eventual downstream preferences / expectations or policies) and also eventually allow users customization on that front.
+
+Additionally, it can lead to unexpected side effects. For instance, `gzip` is recording timestamps in metadata by default, which prevents [reproducible builds](https://reproducible-builds.org/):
+
+```
+--- /tmp/rebuilderdgdH23t/inputs/lmms-1.2.2-28-x86_64.pkg.tar.zst
++++ /tmp/rebuilderdgdH23t/out/lmms-1.2.2-28-x86_64.pkg.tar.zst
+├── lmms-1.2.2-28-x86_64.pkg.tar
+│ ├── file list
+│ │ @@ -1,9 +1,9 @@
+│ │  -rw-r--r--   0 root         (0) root         (0)    10299 2026-05-20 20:45:36.000000 .BUILDINFO
+│ │ --rw-r--r--   0 root         (0) root         (0)   166163 2026-05-20 20:45:36.000000 .MTREE
+│ │ +-rw-r--r--   0 root         (0) root         (0)   166162 2026-05-20 20:45:36.000000 .MTREE
+│ │  -rw-r--r--   0 root         (0) root         (0)     1765 2026-05-20 20:45:36.000000 .PKGINFO
+│ │  drwxr-xr-x   0 root         (0) root         (0)        0 2026-05-20 20:45:36.000000 usr/
+│ │  drwxr-xr-x   0 root         (0) root         (0)        0 2026-05-20 20:45:36.000000 usr/bin/
+│ │  -rwxr-xr-x   0 root         (0) root         (0)  3552216 2026-05-20 20:45:36.000000 usr/bin/lmms
+│ │  drwxr-xr-x   0 root         (0) root         (0)        0 2026-05-20 20:45:36.000000 usr/include/
+│ │  drwxr-xr-x   0 root         (0) root         (0)        0 2026-05-20 20:45:36.000000 usr/include/lmms/
+│ │  -rw-r--r--   0 root         (0) root         (0)     1147 2026-05-20 20:45:36.000000 usr/include/lmms/AboutDialog.h
+│ ├── .MTREE
+│ │ ├── .MTREE-content
+│ │ │ @@ -3273,11 +3273,11 @@
+│ │ │  ./usr/share/lmms/wavetables time=1779309936.0 mode=755 type=dir
+│ │ │  ./usr/share/lmms/wavetables/moog.bin time=1779309936.0 size=163800 sha256digest=8d51771b36bb7c4189a3961e43a5db37c032c0fc9480891effd583491fd20fd9
+│ │ │  ./usr/share/lmms/wavetables/saw.bin time=1779309936.0 size=163800 sha256digest=803327e8ecd1aa8fd299c51d53cb8937aa94a731f496eaf9cb2714149bc6d5bf
+│ │ │  ./usr/share/lmms/wavetables/sqr.bin time=1779309936.0 size=163800 sha256digest=d0baac95c4ab45348a3aa63e940694bd69156aa16f8e9d3711cf54ef2c7b8afb
+│ │ │  ./usr/share/lmms/wavetables/tri.bin time=1779309936.0 size=163800 sha256digest=8618abb222ad7f21c3bce2fbdd56d5b1f03e15cec5c74c78f19de37819df87e7
+│ │ │  ./usr/share/man time=1779309936.0 mode=755 type=dir
+│ │ │  ./usr/share/man/man1 time=1779309936.0 mode=755 type=dir
+│ │ │ -./usr/share/man/man1/lmms.1.gz time=1779309936.0 mode=444 size=2048 sha256digest=6749039969381359ba8cb0bb66c0e88bba29ba7ac2b3cc8e9003175f9e9aeb76
+│ │ │ +./usr/share/man/man1/lmms.1.gz time=1779309936.0 mode=444 size=2048 sha256digest=8c1401e424c6bfe457a1c96eae6ce9e9d3e65fad952eac787538b01228657b54
+│ │ │  ./usr/share/mime time=1779309936.0 mode=755 type=dir
+│ │ │  ./usr/share/mime/packages time=1779309936.0 mode=755 type=dir
+│ │ │  ./usr/share/mime/packages/lmms.xml time=1779309936.0 size=376 sha256digest=1d8bab5f5d5b3a099bc378daeef62117cde187c6ea4c8e68c0213617d0d29937
+│ ├── usr/share/man/man1/lmms.1.gz
+│ │ ├── filetype from file(1)
+│ │ │ @@ -1 +1 @@
+│ │ │ -gzip compressed data, was "lmms.1", last modified: Sat Nov  3 01:43:42 2018, from Unix
+│ │ │ +gzip compressed data, was "lmms.1", last modified: Wed May 20 20:45:36 2026, from Unix
+```
+
+See https://cmpct.info/~sam/blog/posts/automatic-manpage-compression/ for detailed rational.
+---
+ CMakeLists.txt     | 17 +----------------
+ src/CMakeLists.txt |  4 ++--
+ 2 files changed, 3 insertions(+), 18 deletions(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 394973883ab..a1d4562a9c6 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -858,21 +858,6 @@ ADD_SUBDIRECTORY(data)
+ # install tasks
+ ADD_SUBDIRECTORY(cmake/install)
+ 
+-FIND_PACKAGE(UnixCommands)
+-IF(GZIP)
+-	ADD_CUSTOM_COMMAND(OUTPUT "${CMAKE_BINARY_DIR}/lmms.1.gz"
+-					COMMAND ${GZIP} -c ${CMAKE_SOURCE_DIR}/doc/lmms.1 > ${CMAKE_BINARY_DIR}/lmms.1.gz
+-					DEPENDS "${CMAKE_SOURCE_DIR}/doc/lmms.1"
+-					COMMENT "Generating lmms.1.gz"
+-					VERBATIM)
+-
+-
+-	ADD_CUSTOM_TARGET(manpage ALL
+-					DEPENDS "${CMAKE_BINARY_DIR}/lmms.1.gz")
+-ELSEIF(UNIX)
+-	MESSAGE(FATAL_ERROR "Can't find gzip required for generating lmms.1.gz")
+-ENDIF()
+-
+ # install headers
+ 
+ IF(LMMS_BUILD_LINUX)
+@@ -888,7 +873,7 @@ ENDIF(LMMS_BUILD_LINUX)
+ #
+ ADD_CUSTOM_TARGET(distclean
+ 			COMMAND make clean
+-			COMMAND rm -rf `find -name cmake_install.cmake` `find -name Makefile` `find -type d -name CMakeFiles` CMakeCache.txt lmmsconfig.h lmms.1.gz)
++			COMMAND rm -rf `find -name cmake_install.cmake` `find -name Makefile` `find -type d -name CMakeFiles` CMakeCache.txt lmmsconfig.h)
+ 
+ #
+ # add tarball-target
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index bd8e16f3ddf..6e248e92c61 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -139,7 +139,7 @@ IF(NOT CMAKE_VERSION VERSION_LESS 3.6)
+ 	SET_PROPERTY(DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT lmms)
+ ENDIF()
+ 
+-SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${LMMS_RCC_OUT} lmmsconfig.h lmms.1.gz")
++SET_DIRECTORY_PROPERTIES(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "${LMMS_RCC_OUT} lmmsconfig.h")
+ 
+ IF(LMMS_HAVE_WINMM)
+ 	SET(EXTRA_LIBRARIES "winmm")
+@@ -212,7 +212,7 @@ IF(NOT WIN32 AND NOT LMMS_BUILD_APPLE)
+ 	ELSE(CMAKE_INSTALL_MANDIR)
+ 		SET(INSTALL_MANDIR share/man)
+ 	ENDIF(CMAKE_INSTALL_MANDIR)
+-	INSTALL(FILES "${CMAKE_BINARY_DIR}/lmms.1.gz"
++	INSTALL(FILES "${CMAKE_SOURCE_DIR}/doc/lmms.1"
+ 			DESTINATION "${INSTALL_MANDIR}/man1/"
+ 			PERMISSIONS OWNER_READ GROUP_READ WORLD_READ)
+ ENDIF()

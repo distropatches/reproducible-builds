@@ -1,0 +1,37 @@
+From c4bf191e6347759e244f850ecd0548098a6e5705 Mon Sep 17 00:00:00 2001
+From: Robin Candau <robincandau@protonmail.com>
+Date: Mon, 13 Apr 2026 22:32:33 +0200
+Subject: [PATCH] Don't record the current date in header file comments if the
+ `SOURCE_DATE_EPOCH` environment variable is set
+
+Recording the current date in header file comments (from the `cef_api_untracked.json` file generated during the build) introduces non-deterministic timestamps into build artifacts, preventing [reproducible builds](https://reproducible-builds.org/) (see the [diffoscope output](https://reproducible.archlinux.org/api/v0/builds/1028387/diffoscope)).
+
+This commit skips generating date based comments for untracked versions if the [SOURCE_DATE_EPOCH environment variable](https://reproducible-builds.org/docs/source-date-epoch/) is set, allowing reproducible builds in environments that expect them.
+---
+ tools/version_manager.py | 13 +++++++------
+ 1 file changed, 7 insertions(+), 6 deletions(-)
+
+diff --git a/tools/version_manager.py b/tools/version_manager.py
+index 7de1456bf2..5017556642 100644
+--- a/tools/version_manager.py
++++ b/tools/version_manager.py
+@@ -73,12 +73,13 @@ def compute_api_hashes(api_version: str,
+     sandbox_files = [os.path.join(src_dir, f) for f in SANDBOX_COMPAT_FILES]
+     hashes['sandbox_compat'] = calculate_sandbox_compat_hash(sandbox_files)
+ 
+-    if api_version in UNTRACKED_VERSIONS:
+-      label = version_label(api_version)
+-      label = label[0:1].upper() + label[1:]
+-      hashes['comment'] = f'{label} last updated {get_date()}.'
+-    else:
+-      hashes['comment'] = f'Added {get_date()}.'
++    if not os.environ.get("SOURCE_DATE_EPOCH"):
++      if api_version in UNTRACKED_VERSIONS:
++        label = version_label(api_version)
++        label = label[0:1].upper() + label[1:]
++        hashes['comment'] = f'{label} last updated {get_date()}.'
++      else:
++        hashes['comment'] = f'Added {get_date()}.'
+   return hashes
+ 
+ 
