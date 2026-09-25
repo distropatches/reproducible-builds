@@ -1,3 +1,12 @@
+Not suitable for upstreaming in this form.
+
+Date: 2021-01-24
+Author: Bernhard M. Wiedemann
+
+The openSUSE package uses profile-guided-optimizations (PGO)
+with the tests as profiliing run. However, the throughput_test runs for exactly 3 seconds
+and that made the optimizations depend on the performance and scheduling of the build machine.
+
 Index: libsamplerate-0.2.1/Makefile.am
 ===================================================================
 --- libsamplerate-0.2.1.orig/Makefile.am
